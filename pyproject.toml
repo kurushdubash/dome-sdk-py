@@ -8,7 +8,7 @@ version = "0.1.1"
 description = "The Dome SDK - A comprehensive Python SDK for Dome API"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [
     { name = "Kurush Dubash", email = "kurush@domeapi.com" },
     { name = "Kunal Roy", email = "kunal@domeapi.com" },
