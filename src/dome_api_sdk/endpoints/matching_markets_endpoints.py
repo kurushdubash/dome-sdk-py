@@ -1,13 +1,16 @@
 """Matching Markets-related endpoints for the Dome API."""
 
-from typing import Optional
+from typing import Dict, List, Optional
 
 from ..base_client import BaseClient
 from ..types import (
     GetMatchingMarketsBySportParams,
     GetMatchingMarketsParams,
+    KalshiMarket,
+    MarketData,
     MatchingMarketsBySportResponse,
     MatchingMarketsResponse,
+    PolymarketMarket,
     RequestConfig,
 )
 
@@ -56,9 +59,7 @@ class MatchingMarketsEndpoints(BaseClient):
         )
 
         # Parse market data
-        from ..types import KalshiMarket, PolymarketMarket
-
-        parsed_markets = {}
+        parsed_markets: Dict[str, List[MarketData]] = {}
 
         for key, markets in response_data["markets"].items():
             parsed_markets[key] = []
@@ -115,9 +116,7 @@ class MatchingMarketsEndpoints(BaseClient):
         )
 
         # Parse market data
-        from ..types import KalshiMarket, PolymarketMarket
-
-        parsed_markets = {}
+        parsed_markets: Dict[str, List[MarketData]] = {}
 
         for key, markets in response_data["markets"].items():
             parsed_markets[key] = []

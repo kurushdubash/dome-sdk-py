@@ -1,6 +1,6 @@
 """Market-related endpoints for the Dome API."""
 
-from typing import Optional
+from typing import List, Optional, Union
 
 from ..base_client import BaseClient
 from ..types import (
@@ -128,7 +128,7 @@ class MarketEndpoints(BaseClient):
                     token_id=token_metadata["token_id"]
                 )
 
-                parsed_tuple = [parsed_candlestick_data, parsed_token_metadata]
+                parsed_tuple: List[Union[CandlestickData, TokenMetadata]] = parsed_candlestick_data + [parsed_token_metadata]
                 candlesticks.append(parsed_tuple)
 
         return CandlesticksResponse(candlesticks=candlesticks)

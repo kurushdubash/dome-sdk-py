@@ -56,8 +56,10 @@ class BaseClient:
             "Content-Type": "application/json",
         }
 
-        if options and options.get("headers"):
-            headers.update(options["headers"])
+        if options and options.get("headers") is not None:
+            additional_headers = options["headers"]
+            if additional_headers is not None:
+                headers.update(additional_headers)
 
         timeout = (options.get("timeout") if options else None) or self._timeout
 
