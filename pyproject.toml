@@ -10,8 +10,8 @@ readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.8"
 authors = [
-    { name = "Kurush Dubash", email = "kurush@domeapi.io" },
-    { name = "Kunal Roy", email = "kunal@domeapi.io" },
+    { name = "Kurush Dubash", email = "kurush@domeapi.com" },
+    { name = "Kunal Roy", email = "kunal@domeapi.com" },
 ]
 keywords = ["dome", "sdk", "python", "api", "client", "prediction markets"]
 classifiers = [
