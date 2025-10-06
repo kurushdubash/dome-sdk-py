@@ -29,6 +29,36 @@ class BaseClient:
         self._base_url = config.get("base_url") or "https://api.domeapi.io/v1"
         self._timeout = config.get("timeout") or 30.0
 
+    def _prepare_headers(self, options: Optional[RequestConfig] = None) -> Dict[str, str]:
+        """Prepare headers for the request."""
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
+
+        if options and options.get("headers") is not None:
+            additional_headers = options["headers"]
+            if additional_headers is not None:
+                headers.update(additional_headers)
+
+        return headers
+
+    def _handle_http_error(self, e: httpx.HTTPStatusError) -> None:
+        """Handle HTTP status errors."""
+        if e.response.status_code >= 400:
+            try:
+                error_data = e.response.json()
+                if isinstance(error_data, dict) and "error" in error_data:
+                    raise ValueError(
+                        f"API Error: {error_data['error']} - {error_data.get('message', 'Unknown error')}"
+                    )
+            except (ValueError, KeyError):
+                pass
+
+        raise ValueError(
+            f"Request failed: {e.response.status_code} {e.response.text}"
+        )
+
     def _make_request(
         self,
         method: str,
@@ -51,16 +81,7 @@ class BaseClient:
             httpx.HTTPStatusError: If the request fails
             ValueError: If there's an API error
         """
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
-
-        if options and options.get("headers") is not None:
-            additional_headers = options["headers"]
-            if additional_headers is not None:
-                headers.update(additional_headers)
-
+        headers = self._prepare_headers(options)
         timeout = (options.get("timeout") if options else None) or self._timeout
 
         with httpx.Client(timeout=timeout) as client:
@@ -83,18 +104,6 @@ class BaseClient:
                 return response.json()
 
             except httpx.HTTPStatusError as e:
-                if e.response.status_code >= 400:
-                    try:
-                        error_data = e.response.json()
-                        if isinstance(error_data, dict) and "error" in error_data:
-                            raise ValueError(
-                                f"API Error: {error_data['error']} - {error_data.get('message', 'Unknown error')}"
-                            )
-                    except (ValueError, KeyError):
-                        pass
-
-                raise ValueError(
-                    f"Request failed: {e.response.status_code} {e.response.text}"
-                )
+                self._handle_http_error(e)
             except httpx.RequestError as e:
                 raise ValueError(f"Request failed: {str(e)}")
