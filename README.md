@@ -23,51 +23,21 @@ pipenv install dome-api-sdk
 
 ## Quick Start
 
-### Async Usage (Recommended)
-
-```python
-import asyncio
-from dome_api_sdk import DomeClient
-
-async def main():
-    # Initialize the client with your API key
-    async with DomeClient({"api_key": "your-dome-api-key-here"}) as dome:
-        # Get market price
-        market_price = await dome.polymarket.markets.get_market_price({
-            "token_id": "1234567890"
-        })
-        print(f"Market Price: {market_price.price}")
-
-asyncio.run(main())
-```
-
-### Sync Usage (Alternative)
-
-If you prefer not to use asyncio, you can use the synchronous wrapper methods. All async methods have corresponding `_sync` versions:
-
 ```python
 from dome_api_sdk import DomeClient
 
 # Initialize the client with your API key
 dome = DomeClient({"api_key": "your-dome-api-key-here"})
 
-# Get market price (synchronous)
-market_price = dome.polymarket.markets.get_market_price_sync({
+# Get market price
+market_price = dome.polymarket.markets.get_market_price({
     "token_id": "1234567890"
 })
 print(f"Market Price: {market_price.price}")
 
-# Don't forget to close the client when done
+# Close the client when done
 dome.close()
 ```
-
-**Note**: All endpoint methods have both async and sync versions:
-- `get_market_price()` → `get_market_price_sync()`
-- `get_candlesticks()` → `get_candlesticks_sync()`
-- `get_wallet_pnl()` → `get_wallet_pnl_sync()`
-- `get_orders()` → `get_orders_sync()`
-- `get_matching_markets()` → `get_matching_markets_sync()`
-- `get_matching_markets_by_sport()` → `get_matching_markets_by_sport_sync()`
 
 ## Configuration
 
@@ -106,43 +76,19 @@ client = DomeClient()
 
 Get current or historical market prices:
 
-#### Async Usage
-```python
-import asyncio
-from dome_api_sdk import DomeClient
-
-async def example():
-    async with DomeClient({"api_key": "your-api-key"}) as dome:
-        # Current price
-        price = await dome.polymarket.markets.get_market_price({
-            "token_id": "1234567890"
-        })
-        print(f"Current Price: {price.price}")
-        
-        # Historical price
-        historical_price = await dome.polymarket.markets.get_market_price({
-            "token_id": "1234567890",
-            "at_time": 1740000000  # Unix timestamp
-        })
-        print(f"Historical Price: {historical_price.price}")
-
-asyncio.run(example())
-```
-
-#### Sync Usage
 ```python
 from dome_api_sdk import DomeClient
 
 dome = DomeClient({"api_key": "your-api-key"})
 
 # Current price
-price = dome.polymarket.markets.get_market_price_sync({
+price = dome.polymarket.markets.get_market_price({
     "token_id": "1234567890"
 })
 print(f"Current Price: {price.price}")
 
 # Historical price
-historical_price = dome.polymarket.markets.get_market_price_sync({
+historical_price = dome.polymarket.markets.get_market_price({
     "token_id": "1234567890",
     "at_time": 1740000000  # Unix timestamp
 })
@@ -155,31 +101,12 @@ dome.close()
 
 Get historical candlestick data for market analysis:
 
-#### Async Usage
-```python
-import asyncio
-from dome_api_sdk import DomeClient
-
-async def example():
-    async with DomeClient({"api_key": "your-api-key"}) as dome:
-        candlesticks = await dome.polymarket.markets.get_candlesticks({
-            "condition_id": "0x4567b275e6b667a6217f5cb4f06a797d3a1eaf1d0281fb5bc8c75e2046ae7e57",
-            "start_time": 1640995200,
-            "end_time": 1672531200,
-            "interval": 60  # 1 = 1m, 60 = 1h, 1440 = 1d
-        })
-        print(f"Candlesticks: {len(candlesticks.candlesticks)}")
-
-asyncio.run(example())
-```
-
-#### Sync Usage
 ```python
 from dome_api_sdk import DomeClient
 
 dome = DomeClient({"api_key": "your-api-key"})
 
-candlesticks = dome.polymarket.markets.get_candlesticks_sync({
+candlesticks = dome.polymarket.markets.get_candlesticks({
     "condition_id": "0x4567b275e6b667a6217f5cb4f06a797d3a1eaf1d0281fb5bc8c75e2046ae7e57",
     "start_time": 1640995200,
     "end_time": 1672531200,
@@ -195,20 +122,19 @@ dome.close()
 Get profit and loss data for a wallet:
 
 ```python
-import asyncio
 from dome_api_sdk import DomeClient
 
-async def example():
-    async with DomeClient({"api_key": "your-api-key"}) as dome:
-        wallet_pnl = await dome.polymarket.wallet.get_wallet_pnl({
-            "wallet_address": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
-            "granularity": "day",  # 'day', 'week', 'month', 'year', 'all'
-            "start_time": 1726857600,
-            "end_time": 1758316829
-        })
-        print(f"Wallet PnL: {len(wallet_pnl.pnl_over_time)} data points")
+dome = DomeClient({"api_key": "your-api-key"})
 
-asyncio.run(example())
+wallet_pnl = dome.polymarket.wallet.get_wallet_pnl({
+    "wallet_address": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+    "granularity": "day",  # 'day', 'week', 'month', 'year', 'all'
+    "start_time": 1726857600,
+    "end_time": 1758316829
+})
+print(f"Wallet PnL: {len(wallet_pnl.pnl_over_time)} data points")
+
+dome.close()
 ```
 
 ### Orders
@@ -216,21 +142,20 @@ asyncio.run(example())
 Get order data with filtering:
 
 ```python
-import asyncio
 from dome_api_sdk import DomeClient
 
-async def example():
-    async with DomeClient({"api_key": "your-api-key"}) as dome:
-        orders = await dome.polymarket.orders.get_orders({
-            "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
-            "limit": 50,
-            "offset": 0,
-            "start_time": 1640995200,
-            "end_time": 1672531200
-        })
-        print(f"Orders: {len(orders.orders)}")
+dome = DomeClient({"api_key": "your-api-key"})
 
-asyncio.run(example())
+orders = dome.polymarket.orders.get_orders({
+    "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
+    "limit": 50,
+    "offset": 0,
+    "start_time": 1640995200,
+    "end_time": 1672531200
+})
+print(f"Orders: {len(orders.orders)}")
+
+dome.close()
 ```
 
 ### Matching Markets
@@ -238,31 +163,30 @@ asyncio.run(example())
 Find equivalent markets across different platforms:
 
 ```python
-import asyncio
 from dome_api_sdk import DomeClient
 
-async def example():
-    async with DomeClient({"api_key": "your-api-key"}) as dome:
-        # By Polymarket market slugs
-        matching_markets = await dome.matching_markets.get_matching_markets({
-            "polymarket_market_slug": ["nfl-ari-den-2025-08-16"]
-        })
-        print(f"Matching Markets: {len(matching_markets.markets)}")
-        
-        # By Kalshi event tickers
-        matching_markets_kalshi = await dome.matching_markets.get_matching_markets({
-            "kalshi_event_ticker": ["KXNFLGAME-25AUG16ARIDEN"]
-        })
-        print(f"Kalshi Markets: {len(matching_markets_kalshi.markets)}")
-        
-        # By sport and date
-        matching_markets_by_sport = await dome.matching_markets.get_matching_markets_by_sport({
-            "sport": "nfl",
-            "date": "2025-08-16"
-        })
-        print(f"Sport Markets: {len(matching_markets_by_sport.markets)}")
+dome = DomeClient({"api_key": "your-api-key"})
 
-asyncio.run(example())
+# By Polymarket market slugs
+matching_markets = dome.matching_markets.get_matching_markets({
+    "polymarket_market_slug": ["nfl-ari-den-2025-08-16"]
+})
+print(f"Matching Markets: {len(matching_markets.markets)}")
+
+# By Kalshi event tickers
+matching_markets_kalshi = dome.matching_markets.get_matching_markets({
+    "kalshi_event_ticker": ["KXNFLGAME-25AUG16ARIDEN"]
+})
+print(f"Kalshi Markets: {len(matching_markets_kalshi.markets)}")
+
+# By sport and date
+matching_markets_by_sport = dome.matching_markets.get_matching_markets_by_sport({
+    "sport": "nfl",
+    "date": "2025-08-16"
+})
+print(f"Sport Markets: {len(matching_markets_by_sport.markets)}")
+
+dome.close()
 ```
 
 ## Error Handling
@@ -270,22 +194,21 @@ asyncio.run(example())
 The SDK provides comprehensive error handling:
 
 ```python
-import asyncio
 from dome_api_sdk import DomeClient
 
-async def example():
-    async with DomeClient({"api_key": "your-api-key"}) as dome:
-        try:
-            result = await dome.polymarket.markets.get_market_price({
-                "token_id": "invalid-token"
-            })
-        except ValueError as error:
-            if "API Error" in str(error):
-                print(f"API Error: {error}")
-            else:
-                print(f"Network Error: {error}")
+dome = DomeClient({"api_key": "your-api-key"})
 
-asyncio.run(example())
+try:
+    result = dome.polymarket.markets.get_market_price({
+        "token_id": "invalid-token"
+    })
+except ValueError as error:
+    if "API Error" in str(error):
+        print(f"API Error: {error}")
+    else:
+        print(f"Network Error: {error}")
+
+dome.close()
 ```
 
 ## Integration Testing

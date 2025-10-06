@@ -16,18 +16,19 @@ class DomeClient:
 
     Example:
         ```python
-        import asyncio
         from dome_api_sdk import DomeClient
 
-        async def main():
-            async with DomeClient({"api_key": "your-api-key"}) as dome:
-                # Get market price
-                market_price = await dome.polymarket.markets.get_market_price({
-                    "token_id": "1234567890"
-                })
-                print(f"Market Price: {market_price.price}")
-
-        asyncio.run(main())
+        # Initialize the client with your API key
+        dome = DomeClient({"api_key": "your-api-key"})
+        
+        # Get market price
+        market_price = dome.polymarket.markets.get_market_price({
+            "token_id": "1234567890"
+        })
+        print(f"Market Price: {market_price.price}")
+        
+        # Close the client when done
+        dome.close()
         ```
     """
 
@@ -44,19 +45,10 @@ class DomeClient:
         self.polymarket = PolymarketClient(config)
         self.matching_markets = MatchingMarketsEndpoints(config)
 
-    async def __aenter__(self) -> "DomeClient":
-        """Async context manager entry."""
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Async context manager exit."""
-        # No cleanup needed as we don't maintain persistent connections
-        pass
-
     def close(self) -> None:
-        """Close the client (for synchronous usage).
+        """Close the client.
         
-        This method is provided for compatibility with synchronous usage patterns.
+        This method is provided for compatibility with usage patterns.
         Since we don't maintain persistent connections, this is a no-op.
         """
         # No cleanup needed as we don't maintain persistent connections

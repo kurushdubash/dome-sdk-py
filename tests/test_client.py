@@ -12,6 +12,7 @@ from dome_api_sdk import DomeClient
 class TestDomeClient:
     """Test cases for DomeClient."""
 
+    @patch.dict(os.environ, {"DOME_API_KEY": "test-env-key"})
     def test_constructor_default(self) -> None:
         """Test DomeClient constructor with default configuration."""
         client = DomeClient()
@@ -42,9 +43,9 @@ class TestDomeClient:
             with pytest.raises(ValueError, match="DOME_API_KEY is required"):
                 DomeClient()
 
-    @pytest.mark.asyncio
-    async def test_context_manager(self) -> None:
-        """Test DomeClient as async context manager."""
-        async with DomeClient({"api_key": "test-key"}) as client:
-            assert client.polymarket is not None
-            assert client.matching_markets is not None
+    def test_close_method(self) -> None:
+        """Test DomeClient close method."""
+        client = DomeClient({"api_key": "test-key"})
+        # Should not raise any exception
+        client.close()
+        assert True  # If we get here, close() worked

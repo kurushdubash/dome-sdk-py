@@ -1,6 +1,5 @@
 """Base client class for the Dome SDK."""
 
-import asyncio
 import os
 from typing import Any, Dict, Optional
 
@@ -30,7 +29,7 @@ class BaseClient:
         self._base_url = config.get("base_url") or "https://api.domeapi.io/v1"
         self._timeout = config.get("timeout") or 30.0
 
-    async def _make_request(
+    def _make_request(
         self,
         method: str,
         endpoint: str,
@@ -62,16 +61,16 @@ class BaseClient:
         
         timeout = (options.get("timeout") if options else None) or self._timeout
         
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        with httpx.Client(timeout=timeout) as client:
             try:
                 if method.upper() == "GET":
-                    response = await client.get(
+                    response = client.get(
                         f"{self._base_url}{endpoint}",
                         headers=headers,
                         params=params,
                     )
                 else:
-                    response = await client.request(
+                    response = client.request(
                         method=method,
                         url=f"{self._base_url}{endpoint}",
                         headers=headers,
@@ -95,47 +94,3 @@ class BaseClient:
                 raise ValueError(f"Request failed: {e.response.status_code} {e.response.text}")
             except httpx.RequestError as e:
                 raise ValueError(f"Request failed: {str(e)}")
-
-    def _make_request_sync(
-        self,
-        method: str,
-        endpoint: str,
-        params: Optional[Dict[str, Any]] = None,
-        options: Optional[RequestConfig] = None,
-    ) -> Any:
-        """Make a synchronous HTTP request with authentication.
-        
-        Args:
-            method: HTTP method to use
-            endpoint: API endpoint to call
-            params: Request parameters
-            options: Optional request configuration
-            
-        Returns:
-            Response data
-            
-        Raises:
-            httpx.HTTPStatusError: If the request fails
-            ValueError: If there's an API error
-        """
-        # Run the async method in a new event loop
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If we're already in an event loop, we need to use a different approach
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(
-                        asyncio.run,
-                        self._make_request(method, endpoint, params, options)
-                    )
-                    return future.result()
-            else:
-                return loop.run_until_complete(
-                    self._make_request(method, endpoint, params, options)
-                )
-        except RuntimeError:
-            # No event loop exists, create a new one
-            return asyncio.run(
-                self._make_request(method, endpoint, params, options)
-            )
