@@ -18,7 +18,7 @@ from dome_api_sdk.types import (
     PolymarketMarket,
     RequestConfig,
     ValidationError,
-    WalletPnLResponse
+    WalletPnLResponse,
 )
 
 
@@ -34,7 +34,7 @@ class TestMarketPriceResponse:
     def test_frozen_dataclass(self) -> None:
         """Test that MarketPriceResponse is immutable."""
         response = MarketPriceResponse(price=0.5, at_time=1234567890)
-        
+
         with pytest.raises(AttributeError):
             response.price = 0.6  # type: ignore
 
@@ -71,7 +71,7 @@ class TestCandlestickTypes:
             mean=0.125,
             mean_dollars="0.125",
             previous=0.1,
-            previous_dollars="0.10"
+            previous_dollars="0.10",
         )
         assert price.open == 0.1
         assert price.high == 0.2
@@ -86,7 +86,7 @@ class TestCandlestickTypes:
             open_dollars="0.10",
             close_dollars="0.15",
             high_dollars="0.20",
-            low_dollars="0.05"
+            low_dollars="0.05",
         )
         assert ask_bid.open == 0.1
         assert ask_bid.close == 0.15
@@ -94,22 +94,37 @@ class TestCandlestickTypes:
     def test_candlestick_data(self) -> None:
         """Test CandlestickData creation."""
         price = CandlestickPrice(
-            open=0.1, high=0.2, low=0.05, close=0.15,
-            open_dollars="0.10", high_dollars="0.20", low_dollars="0.05", close_dollars="0.15",
-            mean=0.125, mean_dollars="0.125", previous=0.1, previous_dollars="0.10"
+            open=0.1,
+            high=0.2,
+            low=0.05,
+            close=0.15,
+            open_dollars="0.10",
+            high_dollars="0.20",
+            low_dollars="0.05",
+            close_dollars="0.15",
+            mean=0.125,
+            mean_dollars="0.125",
+            previous=0.1,
+            previous_dollars="0.10",
         )
         ask_bid = CandlestickAskBid(
-            open=0.1, close=0.15, high=0.2, low=0.05,
-            open_dollars="0.10", close_dollars="0.15", high_dollars="0.20", low_dollars="0.05"
+            open=0.1,
+            close=0.15,
+            high=0.2,
+            low=0.05,
+            open_dollars="0.10",
+            close_dollars="0.15",
+            high_dollars="0.20",
+            low_dollars="0.05",
         )
-        
+
         data = CandlestickData(
             end_period_ts=1234567890,
             open_interest=1000,
             price=price,
             volume=500,
             yes_ask=ask_bid,
-            yes_bid=ask_bid
+            yes_bid=ask_bid,
         )
         assert data.end_period_ts == 1234567890
         assert data.open_interest == 1000
@@ -132,7 +147,7 @@ class TestWalletTypes:
             start_time=1234567890,
             end_time=1234567890,
             wallet_address="0x123",
-            pnl_over_time=[point]
+            pnl_over_time=[point],
         )
         assert response.granularity == "day"
         assert len(response.pnl_over_time) == 1
@@ -155,31 +170,35 @@ class TestOrderTypes:
             title="Test Market",
             timestamp=1234567890,
             order_hash="0xabc",
-            user="0xdef"
+            user="0xdef",
         )
         assert order.token_id == "123"
         assert order.side == "BUY"
 
     def test_pagination(self) -> None:
         """Test Pagination creation."""
-        pagination = Pagination(
-            limit=50,
-            offset=0,
-            total=100,
-            has_more=True
-        )
+        pagination = Pagination(limit=50, offset=0, total=100, has_more=True)
         assert pagination.limit == 50
         assert pagination.has_more is True
 
     def test_orders_response(self) -> None:
         """Test OrdersResponse creation."""
         order = Order(
-            token_id="123", side="BUY", market_slug="test", condition_id="0x456",
-            shares=1000, shares_normalized=1.0, price=0.5, tx_hash="0x789",
-            title="Test", timestamp=1234567890, order_hash="0xabc", user="0xdef"
+            token_id="123",
+            side="BUY",
+            market_slug="test",
+            condition_id="0x456",
+            shares=1000,
+            shares_normalized=1.0,
+            price=0.5,
+            tx_hash="0x789",
+            title="Test",
+            timestamp=1234567890,
+            order_hash="0xabc",
+            user="0xdef",
         )
         pagination = Pagination(limit=50, offset=0, total=100, has_more=True)
-        
+
         response = OrdersResponse(orders=[order], pagination=pagination)
         assert len(response.orders) == 1
         assert response.pagination.total == 100
@@ -193,7 +212,7 @@ class TestMatchingMarketsTypes:
         market = KalshiMarket(
             platform="KALSHI",
             event_ticker="TEST-TICKER",
-            market_tickers=["TICKER1", "TICKER2"]
+            market_tickers=["TICKER1", "TICKER2"],
         )
         assert market.platform == "KALSHI"
         assert market.event_ticker == "TEST-TICKER"
@@ -201,9 +220,7 @@ class TestMatchingMarketsTypes:
     def test_polymarket_market(self) -> None:
         """Test PolymarketMarket creation."""
         market = PolymarketMarket(
-            platform="POLYMARKET",
-            market_slug="test-market",
-            token_ids=["123", "456"]
+            platform="POLYMARKET", market_slug="test-market", token_ids=["123", "456"]
         )
         assert market.platform == "POLYMARKET"
         assert market.market_slug == "test-market"
@@ -211,14 +228,10 @@ class TestMatchingMarketsTypes:
     def test_matching_markets_response(self) -> None:
         """Test MatchingMarketsResponse creation."""
         kalshi_market = KalshiMarket(
-            platform="KALSHI",
-            event_ticker="TEST-TICKER",
-            market_tickers=["TICKER1"]
+            platform="KALSHI", event_ticker="TEST-TICKER", market_tickers=["TICKER1"]
         )
-        
-        response = MatchingMarketsResponse(
-            markets={"test-key": [kalshi_market]}
-        )
+
+        response = MatchingMarketsResponse(markets={"test-key": [kalshi_market]})
         assert "test-key" in response.markets
         assert len(response.markets["test-key"]) == 1
 
@@ -237,7 +250,7 @@ class TestErrorTypes:
         error = ValidationError(
             error="VALIDATION_ERROR",
             message="Missing required field",
-            required="token_id"
+            required="token_id",
         )
         assert error.error == "VALIDATION_ERROR"
         assert error.required == "token_id"

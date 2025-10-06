@@ -33,9 +33,9 @@ class TestMarketEndpoints:
         with patch.object(client.polymarket.markets, "_make_request") as mock_request:
             mock_request.return_value = mock_response
 
-            result = client.polymarket.markets.get_market_price({
-                "token_id": "1234567890"
-            })
+            result = client.polymarket.markets.get_market_price(
+                {"token_id": "1234567890"}
+            )
 
             mock_request.assert_called_once_with(
                 "GET",
@@ -58,10 +58,9 @@ class TestMarketEndpoints:
         with patch.object(client.polymarket.markets, "_make_request") as mock_request:
             mock_request.return_value = mock_response
 
-            result = client.polymarket.markets.get_market_price({
-                "token_id": "1234567890",
-                "at_time": 1757008834
-            })
+            result = client.polymarket.markets.get_market_price(
+                {"token_id": "1234567890", "at_time": 1757008834}
+            )
 
             mock_request.assert_called_once_with(
                 "GET",
@@ -85,12 +84,10 @@ class TestMarketEndpoints:
                             "price": 0.215,
                             "volume": 500,
                             "yes_ask": 0.220,
-                            "yes_bid": 0.210
+                            "yes_bid": 0.210,
                         }
                     ],
-                    {
-                        "token_id": "1234567890"
-                    }
+                    {"token_id": "1234567890"},
                 ]
             ]
         }
@@ -98,21 +95,19 @@ class TestMarketEndpoints:
         with patch.object(client.polymarket.markets, "_make_request") as mock_request:
             mock_request.return_value = mock_response
 
-            result = client.polymarket.markets.get_candlesticks({
-                "condition_id": "0x4567b275e6b667a6217f5cb4f06a797d3a1eaf1d0281fb5bc8c75e2046ae7e57",
-                "start_time": 1640995200,
-                "end_time": 1672531200,
-                "interval": 60
-            })
+            result = client.polymarket.markets.get_candlesticks(
+                {
+                    "condition_id": "0x4567b275e6b667a6217f5cb4f06a797d3a1eaf1d0281fb5bc8c75e2046ae7e57",
+                    "start_time": 1640995200,
+                    "end_time": 1672531200,
+                    "interval": 60,
+                }
+            )
 
             mock_request.assert_called_once_with(
                 "GET",
                 "/polymarket/candlesticks/0x4567b275e6b667a6217f5cb4f06a797d3a1eaf1d0281fb5bc8c75e2046ae7e57",
-                {
-                    "start_time": 1640995200,
-                    "end_time": 1672531200,
-                    "interval": 60
-                },
+                {"start_time": 1640995200, "end_time": 1672531200, "interval": 60},
                 None,
             )
 
@@ -139,26 +134,22 @@ class TestWalletEndpoints:
             "end_time": 1758316829,
             "wallet_address": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
             "pnl_over_time": [
-                {
-                    "timestamp": 1726857600,
-                    "pnl_to_date": 100.50
-                },
-                {
-                    "timestamp": 1726944000,
-                    "pnl_to_date": 150.75
-                }
-            ]
+                {"timestamp": 1726857600, "pnl_to_date": 100.50},
+                {"timestamp": 1726944000, "pnl_to_date": 150.75},
+            ],
         }
 
         with patch.object(client.polymarket.wallet, "_make_request") as mock_request:
             mock_request.return_value = mock_response
 
-            result = client.polymarket.wallet.get_wallet_pnl({
-                "wallet_address": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
-                "granularity": "day",
-                "start_time": 1726857600,
-                "end_time": 1758316829
-            })
+            result = client.polymarket.wallet.get_wallet_pnl(
+                {
+                    "wallet_address": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+                    "granularity": "day",
+                    "start_time": 1726857600,
+                    "end_time": 1758316829,
+                }
+            )
 
             mock_request.assert_called_once_with(
                 "GET",
@@ -166,7 +157,7 @@ class TestWalletEndpoints:
                 {
                     "granularity": "day",
                     "start_time": 1726857600,
-                    "end_time": 1758316829
+                    "end_time": 1758316829,
                 },
                 None,
             )
@@ -202,25 +193,22 @@ class TestOrdersEndpoints:
                     "title": "Bitcoin Price Test",
                     "timestamp": 1640995200,
                     "order_hash": "0xabcdef1234567890",
-                    "user": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b"
+                    "user": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
                 }
             ],
-            "pagination": {
-                "limit": 10,
-                "offset": 0,
-                "total": 1,
-                "has_more": False
-            }
+            "pagination": {"limit": 10, "offset": 0, "total": 1, "has_more": False},
         }
 
         with patch.object(client.polymarket.orders, "_make_request") as mock_request:
             mock_request.return_value = mock_response
 
-            result = client.polymarket.orders.get_orders({
-                "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
-                "limit": 10,
-                "offset": 0
-            })
+            result = client.polymarket.orders.get_orders(
+                {
+                    "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
+                    "limit": 10,
+                    "offset": 0,
+                }
+            )
 
             mock_request.assert_called_once_with(
                 "GET",
@@ -228,7 +216,7 @@ class TestOrdersEndpoints:
                 {
                     "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
                     "limit": 10,
-                    "offset": 0
+                    "offset": 0,
                 },
                 None,
             )
@@ -257,13 +245,16 @@ class TestMatchingMarketsEndpoints:
                     {
                         "platform": "POLYMARKET",
                         "market_slug": "nfl-ari-den-2025-08-16",
-                        "token_ids": ["1234567890", "0987654321"]
+                        "token_ids": ["1234567890", "0987654321"],
                     },
                     {
                         "platform": "KALSHI",
                         "event_ticker": "KXNFLGAME-25AUG16ARIDEN",
-                        "market_tickers": ["KXNFLGAME-25AUG16ARIDEN-Y", "KXNFLGAME-25AUG16ARIDEN-N"]
-                    }
+                        "market_tickers": [
+                            "KXNFLGAME-25AUG16ARIDEN-Y",
+                            "KXNFLGAME-25AUG16ARIDEN-N",
+                        ],
+                    },
                 ]
             }
         }
@@ -271,9 +262,9 @@ class TestMatchingMarketsEndpoints:
         with patch.object(client.matching_markets, "_make_request") as mock_request:
             mock_request.return_value = mock_response
 
-            result = client.matching_markets.get_matching_markets({
-                "polymarket_market_slug": ["nfl-ari-den-2025-08-16"]
-            })
+            result = client.matching_markets.get_matching_markets(
+                {"polymarket_market_slug": ["nfl-ari-den-2025-08-16"]}
+            )
 
             mock_request.assert_called_once_with(
                 "GET",
@@ -295,21 +286,20 @@ class TestMatchingMarketsEndpoints:
                     {
                         "platform": "POLYMARKET",
                         "market_slug": "nfl-ari-den-2025-08-16",
-                        "token_ids": ["1234567890", "0987654321"]
+                        "token_ids": ["1234567890", "0987654321"],
                     }
                 ]
             },
             "sport": "nfl",
-            "date": "2025-08-16"
+            "date": "2025-08-16",
         }
 
         with patch.object(client.matching_markets, "_make_request") as mock_request:
             mock_request.return_value = mock_response
 
-            result = client.matching_markets.get_matching_markets_by_sport({
-                "sport": "nfl",
-                "date": "2025-08-16"
-            })
+            result = client.matching_markets.get_matching_markets_by_sport(
+                {"sport": "nfl", "date": "2025-08-16"}
+            )
 
             mock_request.assert_called_once_with(
                 "GET",

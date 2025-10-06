@@ -20,7 +20,7 @@ class DomeClient:
 
         # Initialize the client with your API key
         dome = DomeClient({"api_key": "your-api-key"})
-        
+
         # Get market price
         market_price = dome.polymarket.markets.get_market_price({
             "token_id": "1234567890"
