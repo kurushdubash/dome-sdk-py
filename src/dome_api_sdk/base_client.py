@@ -29,7 +29,9 @@ class BaseClient:
         self._base_url = config.get("base_url") or "https://api.domeapi.io/v1"
         self._timeout = config.get("timeout") or 30.0
 
-    def _prepare_headers(self, options: Optional[RequestConfig] = None) -> Dict[str, str]:
+    def _prepare_headers(
+        self, options: Optional[RequestConfig] = None
+    ) -> Dict[str, str]:
         """Prepare headers for the request."""
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -55,9 +57,7 @@ class BaseClient:
             except (ValueError, KeyError):
                 pass
 
-        raise ValueError(
-            f"Request failed: {e.response.status_code} {e.response.text}"
-        )
+        raise ValueError(f"Request failed: {e.response.status_code} {e.response.text}")
 
     def _make_request(
         self,
