@@ -9,52 +9,98 @@ Example:
 
     async def main():
         async with DomeClient({"api_key": "your-api-key"}) as dome:
-            health = await dome.health_check()
-            print(f"API Status: {health.status}")
+            # Get market price
+            market_price = await dome.polymarket.markets.get_market_price({
+                "token_id": "1234567890"
+            })
+            print(f"Market Price: {market_price.price}")
 
     asyncio.run(main())
     ```
 """
 
-from typing import Optional
-
 from .client import DomeClient
 from .types import (
-    APIResponse,
+    # Configuration
     DomeSDKConfig,
+    RequestConfig,
+    # Market Price Types
+    MarketPriceResponse,
+    GetMarketPriceParams,
+    # Candlestick Types
+    CandlestickPrice,
+    CandlestickAskBid,
+    CandlestickData,
+    TokenMetadata,
+    CandlesticksResponse,
+    GetCandlesticksParams,
+    # Wallet PnL Types
+    PnLDataPoint,
+    WalletPnLResponse,
+    GetWalletPnLParams,
+    # Orders Types
+    Order,
+    Pagination,
+    OrdersResponse,
+    GetOrdersParams,
+    # Matching Markets Types
+    KalshiMarket,
+    PolymarketMarket,
+    MarketData,
+    MatchingMarketsResponse,
+    GetMatchingMarketsParams,
+    GetMatchingMarketsBySportParams,
+    MatchingMarketsBySportResponse,
+    # Error Types
+    ApiError,
+    ValidationError,
+    # HTTP Client Types
     HTTPMethod,
-    HealthCheckResponse,
 )
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __author__ = "Kurush Dubash, Kunal Roy"
 __email__ = "kurush@dome.com, kunal@dome.com"
 __license__ = "MIT"
 
 __all__ = [
+    # Main client
     "DomeClient",
-    "DomeSDKConfig", 
-    "APIResponse",
+    # Configuration
+    "DomeSDKConfig",
+    "RequestConfig",
+    # Market Price Types
+    "MarketPriceResponse",
+    "GetMarketPriceParams",
+    # Candlestick Types
+    "CandlestickPrice",
+    "CandlestickAskBid",
+    "CandlestickData",
+    "TokenMetadata",
+    "CandlesticksResponse",
+    "GetCandlesticksParams",
+    # Wallet PnL Types
+    "PnLDataPoint",
+    "WalletPnLResponse",
+    "GetWalletPnLParams",
+    # Orders Types
+    "Order",
+    "Pagination",
+    "OrdersResponse",
+    "GetOrdersParams",
+    # Matching Markets Types
+    "KalshiMarket",
+    "PolymarketMarket",
+    "MarketData",
+    "MatchingMarketsResponse",
+    "GetMatchingMarketsParams",
+    "GetMatchingMarketsBySportParams",
+    "MatchingMarketsBySportResponse",
+    # Error Types
+    "ApiError",
+    "ValidationError",
+    # HTTP Client Types
     "HTTPMethod",
-    "HealthCheckResponse",
+    # Package info
     "__version__",
 ]
-
-# Default client instance for convenience  
-default_client: Optional[DomeClient] = None
-
-
-def get_default_client() -> DomeClient:
-    """Get or create the default client instance.
-    
-    Returns:
-        DomeClient: The default client instance
-        
-    Note:
-        This creates a client with default configuration (no API key).
-        For production use, create a client with proper configuration.
-    """
-    global default_client
-    if default_client is None:
-        default_client = DomeClient()
-    return default_client
