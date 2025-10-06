@@ -62,10 +62,10 @@ clean:
 	find . -type f -name "*.pyc" -delete
 
 build: clean
-	python -m build
+	python3 -m build
 
 publish: build
-	python -m twine upload dist/*
+	python3 -m twine upload dist/*
 
 # Development helpers
 dev-install: dev-setup
@@ -179,8 +179,8 @@ test-release:
 	@echo "5. Publishing to Test PyPI..."
 	@echo "⚠️  This will upload to Test PyPI. Press Ctrl+C to cancel within 3 seconds..."
 	@sleep 3
-	@python -m twine upload --repository testpypi dist/*
+	@python3 -m twine upload --repository testpypi dist/*
 	@echo ""
 	@echo "🎉 Test release completed successfully!"
-	@echo "Package version: $$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+	@echo "Package version: $$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
 	@echo "Test PyPI URL: https://test.pypi.org/project/dome-api-sdk/"
