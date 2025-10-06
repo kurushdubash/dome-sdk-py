@@ -2,7 +2,6 @@
 
 from unittest.mock import patch
 
-import httpx
 import pytest
 
 from dome_api_sdk import DomeClient

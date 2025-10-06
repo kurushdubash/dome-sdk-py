@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-from .types import ApiError, DomeSDKConfig, RequestConfig
+from .types import DomeSDKConfig, RequestConfig
 
 __all__ = ["BaseClient"]
 

@@ -7,17 +7,9 @@ from dome_api_sdk.types import (
     CandlestickAskBid,
     CandlestickData,
     CandlestickPrice,
-    CandlesticksResponse,
-    GetCandlesticksParams,
     GetMarketPriceParams,
-    GetMatchingMarketsBySportParams,
-    GetMatchingMarketsParams,
-    GetOrdersParams,
-    GetWalletPnLParams,
     KalshiMarket,
-    MarketData,
     MarketPriceResponse,
-    MatchingMarketsBySportResponse,
     MatchingMarketsResponse,
     Order,
     OrdersResponse,
@@ -25,9 +17,8 @@ from dome_api_sdk.types import (
     PnLDataPoint,
     PolymarketMarket,
     RequestConfig,
-    TokenMetadata,
     ValidationError,
-    WalletPnLResponse,
+    WalletPnLResponse
 )
 
 

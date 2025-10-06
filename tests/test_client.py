@@ -1,9 +1,8 @@
 """Tests for the DomeClient class."""
 
 import os
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
-import httpx
 import pytest
 
 from dome_api_sdk import DomeClient
