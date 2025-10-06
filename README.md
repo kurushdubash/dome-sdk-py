@@ -335,5 +335,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Authors
 
-- **Kurush Dubash** - [kurush@dome.com](mailto:kurush@dome.com)
-- **Kunal Roy** - [kunal@dome.com](mailto:kunal@dome.com)
+- **Kurush Dubash** - [kurush@domeapi.com](mailto:kurush@domeapi.com)
+- **Kunal Roy** - [kunal@domeapi.com](mailto:kunal@domeapi.com)
