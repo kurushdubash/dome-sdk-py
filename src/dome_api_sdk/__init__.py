@@ -21,41 +21,33 @@ Example:
 
 from .client import DomeClient
 from .types import (
-    # Configuration
-    DomeSDKConfig,
-    RequestConfig,
-    # Market Price Types
-    MarketPriceResponse,
-    GetMarketPriceParams,
-    # Candlestick Types
-    CandlestickPrice,
+    ApiError,
     CandlestickAskBid,
     CandlestickData,
-    TokenMetadata,
+    CandlestickPrice,
     CandlesticksResponse,
+    DomeSDKConfig,
     GetCandlesticksParams,
-    # Wallet PnL Types
-    PnLDataPoint,
-    WalletPnLResponse,
+    GetMarketPriceParams,
+    GetMatchingMarketsBySportParams,
+    GetMatchingMarketsParams,
+    GetOrdersParams,
     GetWalletPnLParams,
-    # Orders Types
+    HTTPMethod,
+    KalshiMarket,
+    MarketData,
+    MarketPriceResponse,
+    MatchingMarketsBySportResponse,
+    MatchingMarketsResponse,
     Order,
     Pagination,
-    OrdersResponse,
-    GetOrdersParams,
-    # Matching Markets Types
-    KalshiMarket,
+    PnLDataPoint,
     PolymarketMarket,
-    MarketData,
-    MatchingMarketsResponse,
-    GetMatchingMarketsParams,
-    GetMatchingMarketsBySportParams,
-    MatchingMarketsBySportResponse,
-    # Error Types
-    ApiError,
+    OrdersResponse,
+    RequestConfig,
+    TokenMetadata,
     ValidationError,
-    # HTTP Client Types
-    HTTPMethod,
+    WalletPnLResponse,
 )
 
 __version__ = "0.1.1"

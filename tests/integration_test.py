@@ -7,7 +7,7 @@ Run with: python -m dome_api_sdk.tests.integration_test <api_key>
 """
 
 import sys
-from typing import Dict, Any
+from typing import Any, Dict
 
 from dome_api_sdk import DomeClient
 
