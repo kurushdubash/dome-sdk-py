@@ -220,9 +220,9 @@ def main():
             print("⚠️  Some tests failed. Check the errors above.")
             sys.exit(1)
     
-    finally:
-        # Always close the client
-        dome.close()
+    except Exception as e:
+        print(f"❌ Test execution failed: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

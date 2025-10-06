@@ -42,10 +42,3 @@ class TestDomeClient:
         with patch.dict(os.environ, {}, clear=True):
             with pytest.raises(ValueError, match="DOME_API_KEY is required"):
                 DomeClient()
-
-    def test_close_method(self) -> None:
-        """Test DomeClient close method."""
-        client = DomeClient({"api_key": "test-key"})
-        # Should not raise any exception
-        client.close()
-        assert True  # If we get here, close() worked

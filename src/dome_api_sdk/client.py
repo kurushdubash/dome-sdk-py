@@ -26,9 +26,6 @@ class DomeClient:
             "token_id": "1234567890"
         })
         print(f"Market Price: {market_price.price}")
-        
-        # Close the client when done
-        dome.close()
         ```
     """
 
@@ -44,12 +41,3 @@ class DomeClient:
         # Initialize all endpoint modules with the same config
         self.polymarket = PolymarketClient(config)
         self.matching_markets = MatchingMarketsEndpoints(config)
-
-    def close(self) -> None:
-        """Close the client.
-        
-        This method is provided for compatibility with usage patterns.
-        Since we don't maintain persistent connections, this is a no-op.
-        """
-        # No cleanup needed as we don't maintain persistent connections
-        pass

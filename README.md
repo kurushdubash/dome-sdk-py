@@ -34,9 +34,6 @@ market_price = dome.polymarket.markets.get_market_price({
     "token_id": "1234567890"
 })
 print(f"Market Price: {market_price.price}")
-
-# Close the client when done
-dome.close()
 ```
 
 ## Configuration
@@ -93,8 +90,6 @@ historical_price = dome.polymarket.markets.get_market_price({
     "at_time": 1740000000  # Unix timestamp
 })
 print(f"Historical Price: {historical_price.price}")
-
-dome.close()
 ```
 
 ### Candlestick Data
@@ -113,28 +108,6 @@ candlesticks = dome.polymarket.markets.get_candlesticks({
     "interval": 60  # 1 = 1m, 60 = 1h, 1440 = 1d
 })
 print(f"Candlesticks: {len(candlesticks.candlesticks)}")
-
-dome.close()
-```
-
-### Wallet PnL
-
-Get profit and loss data for a wallet:
-
-```python
-from dome_api_sdk import DomeClient
-
-dome = DomeClient({"api_key": "your-api-key"})
-
-wallet_pnl = dome.polymarket.wallet.get_wallet_pnl({
-    "wallet_address": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
-    "granularity": "day",  # 'day', 'week', 'month', 'year', 'all'
-    "start_time": 1726857600,
-    "end_time": 1758316829
-})
-print(f"Wallet PnL: {len(wallet_pnl.pnl_over_time)} data points")
-
-dome.close()
 ```
 
 ### Orders
@@ -154,8 +127,6 @@ orders = dome.polymarket.orders.get_orders({
     "end_time": 1672531200
 })
 print(f"Orders: {len(orders.orders)}")
-
-dome.close()
 ```
 
 ### Matching Markets
@@ -185,8 +156,6 @@ matching_markets_by_sport = dome.matching_markets.get_matching_markets_by_sport(
     "date": "2025-08-16"
 })
 print(f"Sport Markets: {len(matching_markets_by_sport.markets)}")
-
-dome.close()
 ```
 
 ## Error Handling
@@ -207,8 +176,6 @@ except ValueError as error:
         print(f"API Error: {error}")
     else:
         print(f"Network Error: {error}")
-
-dome.close()
 ```
 
 ## Integration Testing
