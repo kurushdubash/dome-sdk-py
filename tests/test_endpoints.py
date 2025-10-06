@@ -113,8 +113,8 @@ class TestMarketEndpoints:
 
             assert isinstance(result, CandlesticksResponse)
             assert len(result.candlesticks) == 1
-            assert len(result.candlesticks[0][0]) == 1
-            assert result.candlesticks[0][0][0].price == 0.215
+            assert len(result.candlesticks[0]) == 2  # One CandlestickData and one TokenMetadata
+            assert result.candlesticks[0][0].price == 0.215
             assert result.candlesticks[0][1].token_id == "1234567890"
 
 
@@ -156,8 +156,8 @@ class TestWalletEndpoints:
                 "/polymarket/wallet/pnl/0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
                 {
                     "granularity": "day",
-                    "start_time": 1726857600,
-                    "end_time": 1758316829,
+                    "start_time": "1726857600",
+                    "end_time": "1758316829",
                 },
                 None,
             )
@@ -215,8 +215,8 @@ class TestOrdersEndpoints:
                 "/polymarket/orders",
                 {
                     "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
-                    "limit": 10,
-                    "offset": 0,
+                    "limit": "10",
+                    "offset": "0",
                 },
                 None,
             )
