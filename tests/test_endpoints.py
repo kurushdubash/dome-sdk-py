@@ -113,7 +113,9 @@ class TestMarketEndpoints:
 
             assert isinstance(result, CandlesticksResponse)
             assert len(result.candlesticks) == 1
-            assert len(result.candlesticks[0]) == 2  # One CandlestickData and one TokenMetadata
+            assert (
+                len(result.candlesticks[0]) == 2
+            )  # One CandlestickData and one TokenMetadata
             assert result.candlesticks[0][0].price == 0.215
             assert result.candlesticks[0][1].token_id == "1234567890"
 
