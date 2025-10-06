@@ -58,9 +58,9 @@ from .types import (
     HTTPMethod,
 )
 
-__version__ = "0.0.2"
+__version__ = "0.1.1"
 __author__ = "Kurush Dubash, Kunal Roy"
-__email__ = "kurush@dome.com, kunal@dome.com"
+__email__ = "kurush@domeapi.com, kunal@domeapi.com"
 __license__ = "MIT"
 
 __all__ = [
