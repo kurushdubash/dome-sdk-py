@@ -128,7 +128,9 @@ class MarketEndpoints(BaseClient):
                     token_id=token_metadata["token_id"]
                 )
 
-                parsed_tuple: List[Union[CandlestickData, TokenMetadata]] = parsed_candlestick_data + [parsed_token_metadata]
+                parsed_tuple: List[Union[CandlestickData, TokenMetadata]] = (
+                    parsed_candlestick_data + [parsed_token_metadata]
+                )
                 candlesticks.append(parsed_tuple)
 
         return CandlesticksResponse(candlesticks=candlesticks)
