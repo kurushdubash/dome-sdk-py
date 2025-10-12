@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..base_client import BaseClient, AsyncBaseClient
+from ..base_client import AsyncBaseClient, BaseClient
 from ..types import (
     GetOrdersParams,
     OrdersResponse,

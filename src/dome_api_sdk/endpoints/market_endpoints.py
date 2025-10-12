@@ -1,6 +1,7 @@
 """Market-related endpoints for the Dome API."""
 
 from typing import Any, Optional, Union
+
 from ..base_client import BaseClient
 from ..base_client_async import AsyncBaseClient
 from ..types import (

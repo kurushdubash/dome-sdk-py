@@ -2,42 +2,22 @@
 
 from typing import Dict, Optional
 
-from ..base_client import BaseClient
+from ..base_client import AsyncBaseClient, BaseClient
 from ..types import (
     GetWalletPnLParams,
     RequestConfig,
     WalletPnLResponse,
 )
 
-__all__ = ["WalletEndpoints"]
+__all__ = ["WalletEndpoints", "AsyncWalletEndpoints"]
 
 
-class WalletEndpoints(BaseClient):
-    """Wallet-related endpoints for the Dome API.
-
-    Handles wallet analytics and PnL data.
-    """
-
-    def get_wallet_pnl(
+class BaseWalletEndpoints:
+    def _prepare_get_wallet_pnl(
         self,
         params: GetWalletPnLParams,
         options: Optional[RequestConfig] = None,
     ) -> WalletPnLResponse:
-        """Get Wallet PnL.
-
-        Fetches the profit and loss (PnL) for a specific wallet address
-        over a specified time range and granularity.
-
-        Args:
-            params: Parameters for the wallet PnL request
-            options: Optional request configuration
-
-        Returns:
-            Wallet PnL data
-
-        Raises:
-            ValueError: If the request fails
-        """
         wallet_address = params["wallet_address"]
         granularity = params["granularity"]
         start_time = params.get("start_time")
@@ -53,18 +33,19 @@ class WalletEndpoints(BaseClient):
         if end_time is not None:
             query_params["end_time"] = str(end_time)
 
-        response_data = self._make_request(
+        return (
             "GET",
             f"/polymarket/wallet/pnl/{wallet_address}",
             query_params,
             options,
         )
 
+    def _parse_get_wallet_pnl(self, raw_response):
         # Parse PnL data points
         from ..types import PnLDataPoint
 
         pnl_over_time = []
-        for pnl_point in response_data["pnl_over_time"]:
+        for pnl_point in raw_response["pnl_over_time"]:
             pnl_over_time.append(
                 PnLDataPoint(
                     timestamp=pnl_point["timestamp"],
@@ -73,9 +54,31 @@ class WalletEndpoints(BaseClient):
             )
 
         return WalletPnLResponse(
-            granularity=response_data["granularity"],
-            start_time=response_data["start_time"],
-            end_time=response_data["end_time"],
-            wallet_address=response_data["wallet_address"],
+            granularity=raw_response["granularity"],
+            start_time=raw_response["start_time"],
+            end_time=raw_response["end_time"],
+            wallet_address=raw_response["wallet_address"],
             pnl_over_time=pnl_over_time,
         )
+
+
+class AsyncWalletEndpoints(AsyncBaseClient, BaseWalletEndpoints):
+    async def get_wallet_pnl(
+        self, params: GetWalletPnLParams, options: Optional[RequestConfig] = None
+    ):
+        raw_response = await self._make_request(
+            *self._prepare_get_wallet_pnl(params, options)
+        )
+        parsed_response = self._parse_get_wallet_pnl(raw_response)
+        return parsed_response
+
+
+class WalletEndpoints(BaseClient, BaseWalletEndpoints):
+    def get_wallet_pnl(
+        self, params: GetWalletPnLParams, options: Optional[RequestConfig] = None
+    ):
+        raw_response = self._make_request(
+            *self._prepare_get_wallet_pnl(params, options)
+        )
+        parsed_response = self._parse_get_wallet_pnl(raw_response)
+        return parsed_response
