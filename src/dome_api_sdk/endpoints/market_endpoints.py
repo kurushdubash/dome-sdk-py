@@ -2,7 +2,7 @@
 
 from typing import Any, Optional, Union
 
-from ..base_client import BaseClient, AsyncBaseClient
+from ..base_client import AsyncBaseClient, BaseClient
 from ..types import (
     CandlesticksResponse,
     GetCandlesticksParams,
@@ -15,38 +15,11 @@ __all__ = ["AsyncMarketEndpoints", "MarketEndpoints"]
 
 
 class BaseMarketEndpoints:
-    def _prepare_get_market_price(
-        self,
-        params: GetMarketPriceParams,
-        options: Optional[RequestConfig] = None,
-    ) -> tuple[str, str, dict, Union[RequestConfig, None]]:
-        token_id = params["token_id"]
-        at_time = params.get("at_time")
-
-        query_params: dict = {}
-        if at_time is not None:
-            query_params["at_time"] = at_time
-
-        return (
-            "GET",
-            f"/polymarket/market-price/{token_id}",
-            query_params,
-            options,
-        )
-
-    def _parse_get_market_price(
-        self, raw_response: dict[str, Any]
-    ) -> MarketPriceResponse:
-        return MarketPriceResponse(
-            price=raw_response["price"],
-            at_time=raw_response["at_time"],
-        )
-
     def _prepare_get_candlesticks(
         self,
         params: GetCandlesticksParams,
         options: Optional[RequestConfig] = None,
-    ) -> tuple[str, str, dict, Union[RequestConfig, None]]:
+    ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
         condition_id = params["condition_id"]
         start_time = params["start_time"]
         end_time = params["end_time"]
@@ -67,7 +40,9 @@ class BaseMarketEndpoints:
             options,
         )
 
-    def _parse_get_candlesticks(self, raw_response: dict):
+    def _parse_get_candlesticks(
+        self, raw_response: dict[str, Any]
+    ) -> CandlesticksResponse:
         # Parse the complex candlestick response structure
         from ..types import CandlestickData, TokenMetadata
 
@@ -104,11 +79,38 @@ class BaseMarketEndpoints:
 
         return CandlesticksResponse(candlesticks=candlesticks)
 
+    def _prepare_get_market_price(
+        self,
+        params: GetMarketPriceParams,
+        options: Optional[RequestConfig] = None,
+    ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
+        token_id = params["token_id"]
+        at_time = params.get("at_time")
+
+        query_params: dict[str, Any] = {}
+        if at_time is not None:
+            query_params["at_time"] = at_time
+
+        return (
+            "GET",
+            f"/polymarket/market-price/{token_id}",
+            query_params,
+            options,
+        )
+
+    def _parse_get_market_price(
+        self, raw_response: dict[str, Any]
+    ) -> MarketPriceResponse:
+        return MarketPriceResponse(
+            price=raw_response["price"],
+            at_time=raw_response["at_time"],
+        )
+
 
 class MarketEndpoints(BaseClient, BaseMarketEndpoints):
     def get_candlesticks(
         self, params: GetCandlesticksParams, options: Optional[RequestConfig] = None
-    ):
+    ) -> CandlesticksResponse:
         raw_response = self._make_request(
             *self._prepare_get_candlesticks(params, options)
         )
@@ -117,11 +119,10 @@ class MarketEndpoints(BaseClient, BaseMarketEndpoints):
 
     def get_market_price(
         self, params: GetMarketPriceParams, options: Optional[RequestConfig] = None
-    ):
+    ) -> MarketPriceResponse:
         raw_response = self._make_request(
             *self._prepare_get_market_price(params, options)
         )
-
         parsed_response = self._parse_get_market_price(raw_response)
         return parsed_response
 
@@ -138,7 +139,7 @@ class AsyncMarketEndpoints(AsyncBaseClient, BaseMarketEndpoints):
 
     async def get_market_price(
         self, params: GetMarketPriceParams, options: Optional[RequestConfig] = None
-    ):
+    ) -> MarketPriceResponse:
         raw_response = await self._make_request(
             *self._prepare_get_market_price(params, options)
         )

@@ -2,7 +2,7 @@
 
 from ..types import DomeSDKConfig
 from .market_endpoints import AsyncMarketEndpoints, MarketEndpoints
-from .orders_endpoints import AsyncOrdersEndpoint, OrdersEndpoints
+from .orders_endpoints import AsyncOrdersEndpoints, OrdersEndpoints
 from .wallet_endpoints import AsyncWalletEndpoints, WalletEndpoints
 
 __all__ = ["PolymarketClient"]
@@ -11,7 +11,7 @@ __all__ = ["PolymarketClient"]
 class AsyncPolymarketClient:
     def __init__(self, config: DomeSDKConfig) -> None:
         self.markets = AsyncMarketEndpoints(config)
-        self.orders = AsyncOrdersEndpoint(config)
+        self.orders = AsyncOrdersEndpoints(config)
         self.wallet = AsyncWalletEndpoints(config)
 
 

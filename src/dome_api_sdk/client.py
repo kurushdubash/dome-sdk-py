@@ -2,39 +2,29 @@
 
 from typing import Optional
 
-from .endpoints import MatchingMarketsEndpoints, PolymarketClient
+from .endpoints import (
+    AsyncMatchingMarketsEndpoints,
+    AsyncPolymarketClient,
+    MatchingMarketsEndpoints,
+    PolymarketClient,
+)
 from .types import DomeSDKConfig
 
 __all__ = ["DomeClient"]
 
 
-class DomeClient:
-    """Main Dome SDK Client.
-
-    Provides a comprehensive Python SDK for interacting with Dome API.
-    Features include market data, wallet analytics, order tracking, and cross-platform market matching.
-
-    Example:
-        ```python
-        from dome_api_sdk import DomeClient
-
-        # Initialize the client with your API key
-        dome = DomeClient({"api_key": "your-api-key"})
-
-        # Get market price
-        market_price = dome.polymarket.markets.get_market_price({
-            "token_id": "1234567890"
-        })
-        print(f"Market Price: {market_price.price}")
-        ```
-    """
-
+class AsyncDomeClient:
     def __init__(self, config: Optional[DomeSDKConfig] = None) -> None:
-        """Creates a new instance of the Dome SDK.
+        if config is None:
+            config = {}
 
-        Args:
-            config: Configuration options for the SDK
-        """
+        # Initialize all endpoint modules with the same config
+        self.polymarket = AsyncPolymarketClient(config)
+        self.matching_markets = AsyncMatchingMarketsEndpoints(config)
+
+
+class DomeClient:
+    def __init__(self, config: Optional[DomeSDKConfig] = None) -> None:
         if config is None:
             config = {}
 

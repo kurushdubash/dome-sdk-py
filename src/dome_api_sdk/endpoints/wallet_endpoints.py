@@ -1,6 +1,6 @@
 """Wallet-related endpoints for the Dome API."""
 
-from typing import Dict, Optional
+from typing import Any, Optional
 
 from ..base_client import AsyncBaseClient, BaseClient
 from ..types import (
@@ -9,7 +9,7 @@ from ..types import (
     WalletPnLResponse,
 )
 
-__all__ = ["WalletEndpoints", "AsyncWalletEndpoints"]
+__all__ = ["AsyncWalletEndpoints", "WalletEndpoints"]
 
 
 class BaseWalletEndpoints:
@@ -17,13 +17,13 @@ class BaseWalletEndpoints:
         self,
         params: GetWalletPnLParams,
         options: Optional[RequestConfig] = None,
-    ) -> WalletPnLResponse:
+    ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
         wallet_address = params["wallet_address"]
         granularity = params["granularity"]
         start_time = params.get("start_time")
         end_time = params.get("end_time")
 
-        query_params: Dict[str, str] = {
+        query_params: dict[str, str] = {
             "granularity": granularity,
         }
 
@@ -40,7 +40,7 @@ class BaseWalletEndpoints:
             options,
         )
 
-    def _parse_get_wallet_pnl(self, raw_response):
+    def _parse_get_wallet_pnl(self, raw_response: dict[str, Any]) -> WalletPnLResponse:
         # Parse PnL data points
         from ..types import PnLDataPoint
 
@@ -65,7 +65,7 @@ class BaseWalletEndpoints:
 class AsyncWalletEndpoints(AsyncBaseClient, BaseWalletEndpoints):
     async def get_wallet_pnl(
         self, params: GetWalletPnLParams, options: Optional[RequestConfig] = None
-    ):
+    ) -> WalletPnLResponse:
         raw_response = await self._make_request(
             *self._prepare_get_wallet_pnl(params, options)
         )
@@ -76,7 +76,7 @@ class AsyncWalletEndpoints(AsyncBaseClient, BaseWalletEndpoints):
 class WalletEndpoints(BaseClient, BaseWalletEndpoints):
     def get_wallet_pnl(
         self, params: GetWalletPnLParams, options: Optional[RequestConfig] = None
-    ):
+    ) -> WalletPnLResponse:
         raw_response = self._make_request(
             *self._prepare_get_wallet_pnl(params, options)
         )

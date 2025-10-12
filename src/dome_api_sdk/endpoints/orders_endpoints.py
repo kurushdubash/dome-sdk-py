@@ -1,6 +1,6 @@
 """Orders-related endpoints for the Dome API."""
 
-from typing import Optional
+from typing import Any, Optional
 
 from ..base_client import AsyncBaseClient, BaseClient
 from ..types import (
@@ -9,7 +9,7 @@ from ..types import (
     RequestConfig,
 )
 
-__all__ = ["OrdersEndpoints", "AsyncOrdersEndpoint"]
+__all__ = ["AsyncOrdersEndpoints", "OrdersEndpoints"]
 
 
 class BaseOrdersEndpoints:
@@ -17,8 +17,8 @@ class BaseOrdersEndpoints:
         self,
         params: GetOrdersParams,
         options: Optional[RequestConfig] = None,
-    ) -> OrdersResponse:
-        query_params = {}
+    ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
+        query_params: dict[str, Any] = {}
 
         if params.get("market_slug"):
             query_params["market_slug"] = params["market_slug"]
@@ -44,7 +44,7 @@ class BaseOrdersEndpoints:
             options,
         )
 
-    def _parse_get_orders(self, raw_response):
+    def _parse_get_orders(self, raw_response: dict[str, Any]) -> OrdersResponse:
         from ..types import Order, Pagination
 
         orders = []
@@ -81,24 +81,21 @@ class BaseOrdersEndpoints:
         )
 
 
-class AsyncOrdersEndpoint(AsyncBaseClient, BaseOrdersEndpoints):
+class AsyncOrdersEndpoints(AsyncBaseClient, BaseOrdersEndpoints):
     async def get_orders(
         self, params: GetOrdersParams, options: Optional[RequestConfig] = None
-    ):
+    ) -> OrdersResponse:
         raw_response = await self._make_request(
             *self._prepare_get_orders(params, options)
         )
-
-        parsed_response = await self._parse_get_orders(raw_response)
-
+        parsed_response = self._parse_get_orders(raw_response)
         return parsed_response
 
 
 class OrdersEndpoints(BaseClient, BaseOrdersEndpoints):
     def get_orders(
         self, params: GetOrdersParams, options: Optional[RequestConfig] = None
-    ):
+    ) -> OrdersResponse:
         raw_response = self._make_request(*self._prepare_get_orders(params, options))
         parsed_response = self._parse_get_orders(raw_response)
-
         return parsed_response

@@ -1,8 +1,8 @@
 """Matching Markets-related endpoints for the Dome API."""
 
-from typing import Dict, List, Optional
+from typing import Any, Optional
 
-from ..base_client import BaseClient
+from ..base_client import AsyncBaseClient, BaseClient
 from ..types import (
     GetMatchingMarketsBySportParams,
     GetMatchingMarketsParams,
@@ -14,36 +14,21 @@ from ..types import (
     RequestConfig,
 )
 
-__all__ = ["MatchingMarketsEndpoints"]
+__all__ = ["MatchingMarketsEndpoints", "AsyncMatchingMarketsEndpoints"]
 
 
-class MatchingMarketsEndpoints(BaseClient):
+class BaseMatchingMarketsEndpoints:
     """Matching Markets-related endpoints for the Dome API.
 
     Handles cross-platform market matching functionality.
     """
 
-    def get_matching_markets(
+    def _prepare_get_matching_markets(
         self,
         params: GetMatchingMarketsParams,
         options: Optional[RequestConfig] = None,
-    ) -> MatchingMarketsResponse:
-        """Get Matching Markets for Sports.
-
-        Find equivalent markets across different prediction market platforms
-        (Polymarket, Kalshi, etc.) for sports events.
-
-        Args:
-            params: Parameters for the matching markets request
-            options: Optional request configuration
-
-        Returns:
-            Matching markets data
-
-        Raises:
-            ValueError: If the request fails
-        """
-        query_params = {}
+    ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
+        query_params: dict[str, Any] = {}
 
         if params.get("polymarket_market_slug"):
             query_params["polymarket_market_slug"] = params["polymarket_market_slug"]
@@ -51,17 +36,20 @@ class MatchingMarketsEndpoints(BaseClient):
         if params.get("kalshi_event_ticker"):
             query_params["kalshi_event_ticker"] = params["kalshi_event_ticker"]
 
-        response_data = self._make_request(
+        return (
             "GET",
             "/matching-markets/sports/",
             query_params,
             options,
         )
 
+    def _parse_get_matching_markets(
+        self, raw_response: dict[str, Any]
+    ) -> MatchingMarketsResponse:
         # Parse market data
-        parsed_markets: Dict[str, List[MarketData]] = {}
+        parsed_markets: dict[str, list[MarketData]] = {}
 
-        for key, markets in response_data["markets"].items():
+        for key, markets in raw_response["markets"].items():
             parsed_markets[key] = []
             for market in markets:
                 if market["platform"] == "KALSHI":
@@ -83,42 +71,30 @@ class MatchingMarketsEndpoints(BaseClient):
 
         return MatchingMarketsResponse(markets=parsed_markets)
 
-    def get_matching_markets_by_sport(
+    def _prepare_get_matching_markets_by_sport(
         self,
         params: GetMatchingMarketsBySportParams,
         options: Optional[RequestConfig] = None,
-    ) -> MatchingMarketsBySportResponse:
-        """Get Matching Markets for Sports by Sport and Date.
-
-        Find equivalent markets across different prediction market platforms
-        for sports events by sport and date.
-
-        Args:
-            params: Parameters for the matching markets by sport request
-            options: Optional request configuration
-
-        Returns:
-            Matching markets data
-
-        Raises:
-            ValueError: If the request fails
-        """
+    ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
         sport = params["sport"]
         date = params["date"]
 
-        query_params = {"date": date}
+        query_params: dict[str, Any] = {"date": date}
 
-        response_data = self._make_request(
+        return (
             "GET",
             f"/matching-markets/sports/{sport}/",
             query_params,
             options,
         )
 
+    def _parse_get_matching_markets_by_sport(
+        self, raw_response: dict[str, Any]
+    ) -> MatchingMarketsBySportResponse:
         # Parse market data
-        parsed_markets: Dict[str, List[MarketData]] = {}
+        parsed_markets: dict[str, list[MarketData]] = {}
 
-        for key, markets in response_data["markets"].items():
+        for key, markets in raw_response["markets"].items():
             parsed_markets[key] = []
             for market in markets:
                 if market["platform"] == "KALSHI":
@@ -140,6 +116,50 @@ class MatchingMarketsEndpoints(BaseClient):
 
         return MatchingMarketsBySportResponse(
             markets=parsed_markets,
-            sport=response_data["sport"],
-            date=response_data["date"],
+            sport=raw_response["sport"],
+            date=raw_response["date"],
         )
+
+
+class AsyncMatchingMarketsEndpoints(AsyncBaseClient, BaseMatchingMarketsEndpoints):
+    async def get_matching_markets(
+        self, params: GetMatchingMarketsParams, options: Optional[RequestConfig] = None
+    ) -> MatchingMarketsResponse:
+        raw_response = await self._make_request(
+            *self._prepare_get_matching_markets(params, options)
+        )
+        parsed_response = self._parse_get_matching_markets(raw_response)
+        return parsed_response
+
+    async def get_matching_markets_by_sport(
+        self,
+        params: GetMatchingMarketsBySportParams,
+        options: Optional[RequestConfig] = None,
+    ) -> MatchingMarketsBySportResponse:
+        raw_response = await self._make_request(
+            *self._prepare_get_matching_markets_by_sport(params, options)
+        )
+        parsed_response = self._parse_get_matching_markets_by_sport(raw_response)
+        return parsed_response
+
+
+class MatchingMarketsEndpoints(BaseClient, BaseMatchingMarketsEndpoints):
+    def get_matching_markets(
+        self, params: GetMatchingMarketsParams, options: Optional[RequestConfig] = None
+    ) -> MatchingMarketsResponse:
+        raw_response = self._make_request(
+            *self._prepare_get_matching_markets(params, options)
+        )
+        parsed_response = self._parse_get_matching_markets(raw_response)
+        return parsed_response
+
+    def get_matching_markets_by_sport(
+        self,
+        params: GetMatchingMarketsBySportParams,
+        options: Optional[RequestConfig] = None,
+    ) -> MatchingMarketsBySportResponse:
+        raw_response = self._make_request(
+            *self._prepare_get_matching_markets_by_sport(params, options)
+        )
+        parsed_response = self._parse_get_matching_markets_by_sport(raw_response)
+        return parsed_response
