@@ -1,7 +1,7 @@
 """Base client class for the Dome SDK."""
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import httpx
 
@@ -31,7 +31,7 @@ class BaseClient:
 
     def _prepare_headers(
         self, options: Optional[RequestConfig] = None
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Prepare headers for the request."""
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -63,7 +63,7 @@ class BaseClient:
         self,
         method: str,
         endpoint: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
         options: Optional[RequestConfig] = None,
     ) -> Any:
         """Make a syncronous generic HTTP request with authentication.
@@ -130,7 +130,7 @@ class AsyncBaseClient:
 
     def _prepare_headers(
         self, options: Optional[RequestConfig] = None
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Prepare headers for the request."""
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -162,7 +162,7 @@ class AsyncBaseClient:
         self,
         method: str,
         endpoint: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
         options: Optional[RequestConfig] = None,
     ) -> Any:
         """Make an asynchronous, generic HTTP request with authentication.

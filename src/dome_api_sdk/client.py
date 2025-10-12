@@ -10,7 +10,7 @@ from .endpoints import (
 )
 from .types import DomeSDKConfig
 
-__all__ = ["DomeClient"]
+__all__ = ["DomeClient", "AsyncDomeClient"]
 
 
 class AsyncDomeClient:

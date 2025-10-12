@@ -19,7 +19,7 @@ Example:
     ```
 """
 
-from .client import DomeClient
+from .client import DomeClient, AsyncDomeClient
 from .types import (
     ApiError,
     CandlestickAskBid,
@@ -58,6 +58,7 @@ __license__ = "MIT"
 __all__ = [
     # Main client
     "DomeClient",
+    "AsyncDomeClient",
     # Configuration
     "DomeSDKConfig",
     "RequestConfig",
