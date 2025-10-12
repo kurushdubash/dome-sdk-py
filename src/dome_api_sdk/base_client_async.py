@@ -7,14 +7,14 @@ import httpx
 
 from .types import DomeSDKConfig, RequestConfig
 
-__all__ = ["BaseClient"]
+__all__ = ["AsyncBaseClient"]
 
 
-class BaseClient:
-    """A sync Base class that provides common HTTP functionality for all Dome API endpoints."""
+class AsyncBaseClient:
+    """A async Base class that provides common HTTP functionality for all Dome API endpoints."""
 
     def __init__(self, config: DomeSDKConfig) -> None:
-        """Initialize the sync base client.
+        """Initialize the async base client.
 
         Args:
             config: Configuration options for the SDK
@@ -59,14 +59,14 @@ class BaseClient:
 
         raise ValueError(f"Request failed: {e.response.status_code} {e.response.text}")
 
-    def _make_request(
+    async def _make_request(
         self,
         method: str,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         options: Optional[RequestConfig] = None,
     ) -> Any:
-        """Make a syncronous generic HTTP request with authentication.
+        """Make an asynchronous, generic HTTP request with authentication.
 
         Args:
             method: HTTP method to use
@@ -84,16 +84,16 @@ class BaseClient:
         headers = self._prepare_headers(options)
         timeout = (options.get("timeout") if options else None) or self._timeout
 
-        with httpx.Client(timeout=timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout) as client:
             try:
                 if method.upper() == "GET":
-                    response = client.get(
+                    response = await client.get(
                         f"{self._base_url}{endpoint}",
                         headers=headers,
                         params=params,
                     )
                 else:
-                    response = client.request(
+                    response = await client.request(
                         method=method,
                         url=f"{self._base_url}{endpoint}",
                         headers=headers,
