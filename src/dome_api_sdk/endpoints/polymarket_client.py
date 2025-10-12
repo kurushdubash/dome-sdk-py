@@ -1,11 +1,17 @@
 """Polymarket client for the Dome SDK."""
 
 from ..types import DomeSDKConfig
-from .market_endpoints import MarketEndpoints
-from .orders_endpoints import OrdersEndpoints
+from .market_endpoints import MarketEndpoints, AsyncMarketEndpoints
+from .orders_endpoints import OrdersEndpoints, AsyncOrdersEndpoint
 from .wallet_endpoints import WalletEndpoints
 
 __all__ = ["PolymarketClient"]
+
+
+class AsyncPolymarketClient:
+    def __init__(self, config: DomeSDKConfig) -> None:
+        self.markets = AsyncMarketEndpoints(config)
+        self.orders = AsyncOrdersEndpoint(config)
 
 
 class PolymarketClient:

@@ -2,43 +2,22 @@
 
 from typing import Optional
 
-from ..base_client import BaseClient
+from ..base_client import BaseClient, AsyncBaseClient
 from ..types import (
     GetOrdersParams,
     OrdersResponse,
     RequestConfig,
 )
 
-__all__ = ["OrdersEndpoints"]
+__all__ = ["OrdersEndpoints", "AsyncOrdersEndpoint"]
 
 
-class OrdersEndpoints(BaseClient):
-    """Orders-related endpoints for the Dome API.
-
-    Handles order data retrieval and filtering.
-    """
-
-    def get_orders(
+class BaseOrdersEndpoints:
+    def _prepare_get_orders(
         self,
         params: GetOrdersParams,
         options: Optional[RequestConfig] = None,
     ) -> OrdersResponse:
-        """Get Orders.
-
-        Fetches order data with optional filtering by market, condition, token,
-        time range, and user. Returns orders that match either primary or secondary
-        token IDs for markets.
-
-        Args:
-            params: Parameters for the orders request
-            options: Optional request configuration
-
-        Returns:
-            Orders data with pagination
-
-        Raises:
-            ValueError: If the request fails
-        """
         query_params = {}
 
         if params.get("market_slug"):
@@ -58,18 +37,18 @@ class OrdersEndpoints(BaseClient):
         if params.get("user"):
             query_params["user"] = params["user"]
 
-        response_data = self._make_request(
+        return (
             "GET",
             "/polymarket/orders",
             query_params,
             options,
         )
 
-        # Parse orders
+    def _parse_get_orders(self, raw_response):
         from ..types import Order, Pagination
 
         orders = []
-        for order_data in response_data["orders"]:
+        for order_data in raw_response["orders"]:
             orders.append(
                 Order(
                     token_id=order_data["token_id"],
@@ -88,7 +67,7 @@ class OrdersEndpoints(BaseClient):
             )
 
         # Parse pagination
-        pagination_data = response_data["pagination"]
+        pagination_data = raw_response["pagination"]
         pagination = Pagination(
             limit=pagination_data["limit"],
             offset=pagination_data["offset"],
@@ -100,3 +79,26 @@ class OrdersEndpoints(BaseClient):
             orders=orders,
             pagination=pagination,
         )
+
+
+class AsyncOrdersEndpoint(AsyncBaseClient, BaseOrdersEndpoints):
+    async def get_orders(
+        self, params: GetOrdersParams, options: Optional[RequestConfig] = None
+    ):
+        raw_response = await self._make_request(
+            *self._prepare_get_orders(params, options)
+        )
+
+        parsed_response = await self._parse_get_orders(raw_response)
+
+        return parsed_response
+
+
+class OrdersEndpoints(BaseClient, BaseOrdersEndpoints):
+    def get_orders(
+        self, params: GetOrdersParams, options: Optional[RequestConfig] = None
+    ):
+        raw_response = self._make_request(*self._prepare_get_orders(params, options))
+        parsed_response = self._parse_get_orders(raw_response)
+
+        return parsed_response
