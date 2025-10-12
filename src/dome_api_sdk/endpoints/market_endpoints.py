@@ -108,9 +108,29 @@ class BaseMarketEndpoints:
 
 
 class MarketEndpoints(BaseClient, BaseMarketEndpoints):
+    """Market-related endpoints for the Dome API.
+
+    Handles market price and candlestick data.
+    """
+
     def get_candlesticks(
         self, params: GetCandlesticksParams, options: Optional[RequestConfig] = None
     ) -> CandlesticksResponse:
+        """Get Candlestick Data.
+
+        Fetches historical candlestick data for a market identified by condition_id,
+        over a specified interval.
+
+        Args:
+            params: Parameters for the candlestick request
+            options: Optional request configuration
+
+        Returns:
+            Candlestick data
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = self._make_request(
             *self._prepare_get_candlesticks(params, options)
         )
@@ -120,6 +140,21 @@ class MarketEndpoints(BaseClient, BaseMarketEndpoints):
     def get_market_price(
         self, params: GetMarketPriceParams, options: Optional[RequestConfig] = None
     ) -> MarketPriceResponse:
+        """Get Market Price.
+
+        Fetches the current market price for a market by token_id.
+        Allows historical lookups via the at_time query parameter.
+
+        Args:
+            params: Parameters for the market price request
+            options: Optional request configuration
+
+        Returns:
+            Market price data
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = self._make_request(
             *self._prepare_get_market_price(params, options)
         )
@@ -131,6 +166,21 @@ class AsyncMarketEndpoints(AsyncBaseClient, BaseMarketEndpoints):
     async def get_candlesticks(
         self, params: GetCandlesticksParams, options: Optional[RequestConfig] = None
     ) -> CandlesticksResponse:
+        """Get Candlestick Data.
+
+        Fetches historical candlestick data for a market identified by condition_id,
+        over a specified interval.
+
+        Args:
+            params: Parameters for the candlestick request
+            options: Optional request configuration
+
+        Returns:
+            Candlestick data
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = await self._make_request(
             *self._prepare_get_candlesticks(params, options)
         )
@@ -140,6 +190,21 @@ class AsyncMarketEndpoints(AsyncBaseClient, BaseMarketEndpoints):
     async def get_market_price(
         self, params: GetMarketPriceParams, options: Optional[RequestConfig] = None
     ) -> MarketPriceResponse:
+        """Get Market Price.
+
+        Fetches the current market price for a market by token_id.
+        Allows historical lookups via the at_time query parameter.
+
+        Args:
+            params: Parameters for the market price request
+            options: Optional request configuration
+
+        Returns:
+            Market price data
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = await self._make_request(
             *self._prepare_get_market_price(params, options)
         )
