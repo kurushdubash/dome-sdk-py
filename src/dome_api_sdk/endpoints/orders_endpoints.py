@@ -13,11 +13,14 @@ __all__ = ["AsyncOrdersEndpoints", "OrdersEndpoints"]
 
 
 class BaseOrdersEndpoints:
+    """A base class for Orders endpoints that encapsulates the core logic of the orders endpoints. Doesn't deal with transport, handled by subclasses."""
+
     def _prepare_get_orders(
         self,
         params: GetOrdersParams,
         options: Optional[RequestConfig] = None,
     ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
+        """Prepare the request for get_orders. This does NOT handle transport, but rather prepares a request in the format needed for the BaseClient's _make_request."""
         query_params: dict[str, Any] = {}
 
         if params.get("market_slug"):
@@ -45,6 +48,7 @@ class BaseOrdersEndpoints:
         )
 
     def _parse_get_orders(self, raw_response: dict[str, Any]) -> OrdersResponse:
+        """Parses the raw json of the get_orders endpoint."""
         from ..types import Order, Pagination
 
         orders = []
@@ -82,9 +86,29 @@ class BaseOrdersEndpoints:
 
 
 class AsyncOrdersEndpoints(AsyncBaseClient, BaseOrdersEndpoints):
+    """Orders-related endpoints for the Dome API (Async version).
+
+    Handles order data retrieval and filtering.
+    """
+
     async def get_orders(
         self, params: GetOrdersParams, options: Optional[RequestConfig] = None
     ) -> OrdersResponse:
+        """Get Orders.
+
+        Fetches order data with optional filtering by market, condition, token, time range, and user.
+        Returns orders that match either primary or secondary token IDs for markets.
+
+        Args:
+            params: Parameters for the orders request
+            options: Optional request configuration
+
+        Returns:
+            Orders data with pagination
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = await self._make_request(
             *self._prepare_get_orders(params, options)
         )
@@ -93,9 +117,29 @@ class AsyncOrdersEndpoints(AsyncBaseClient, BaseOrdersEndpoints):
 
 
 class OrdersEndpoints(BaseClient, BaseOrdersEndpoints):
+    """Orders-related endpoints for the Dome API.
+
+    Handles order data retrieval and filtering.
+    """
+
     def get_orders(
         self, params: GetOrdersParams, options: Optional[RequestConfig] = None
     ) -> OrdersResponse:
+        """Get Orders.
+
+        Fetches order data with optional filtering by market, condition, token, time range, and user.
+        Returns orders that match either primary or secondary token IDs for markets.
+
+        Args:
+            params: Parameters for the orders request
+            options: Optional request configuration
+
+        Returns:
+            Orders data with pagination
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = self._make_request(*self._prepare_get_orders(params, options))
         parsed_response = self._parse_get_orders(raw_response)
         return parsed_response

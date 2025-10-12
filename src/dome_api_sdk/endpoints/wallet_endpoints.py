@@ -13,11 +13,14 @@ __all__ = ["AsyncWalletEndpoints", "WalletEndpoints"]
 
 
 class BaseWalletEndpoints:
+    """A base class for Wallet endpoints that encapsulates the core logic of the wallet endpoints. Doesn't deal with transport, handled by subclasses."""
+
     def _prepare_get_wallet_pnl(
         self,
         params: GetWalletPnLParams,
         options: Optional[RequestConfig] = None,
     ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
+        """Prepare the request for get_wallet_pnl. This does NOT handle transport, but rather prepares a request in the format needed for the BaseClient's _make_request."""
         wallet_address = params["wallet_address"]
         granularity = params["granularity"]
         start_time = params.get("start_time")
@@ -41,6 +44,7 @@ class BaseWalletEndpoints:
         )
 
     def _parse_get_wallet_pnl(self, raw_response: dict[str, Any]) -> WalletPnLResponse:
+        """Parses the raw json of the get_wallet_pnl endpoint."""
         # Parse PnL data points
         from ..types import PnLDataPoint
 
@@ -63,9 +67,28 @@ class BaseWalletEndpoints:
 
 
 class AsyncWalletEndpoints(AsyncBaseClient, BaseWalletEndpoints):
+    """Wallet-related endpoints for the Dome API (Async version).
+
+    Handles wallet analytics and PnL data.
+    """
+
     async def get_wallet_pnl(
         self, params: GetWalletPnLParams, options: Optional[RequestConfig] = None
     ) -> WalletPnLResponse:
+        """Get Wallet PnL.
+
+        Fetches the profit and loss (PnL) for a specific wallet address over a specified time range and granularity.
+
+        Args:
+            params: Parameters for the wallet PnL request
+            options: Optional request configuration
+
+        Returns:
+            Wallet PnL data
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = await self._make_request(
             *self._prepare_get_wallet_pnl(params, options)
         )
@@ -74,9 +97,28 @@ class AsyncWalletEndpoints(AsyncBaseClient, BaseWalletEndpoints):
 
 
 class WalletEndpoints(BaseClient, BaseWalletEndpoints):
+    """Wallet-related endpoints for the Dome API.
+
+    Handles wallet analytics and PnL data.
+    """
+
     def get_wallet_pnl(
         self, params: GetWalletPnLParams, options: Optional[RequestConfig] = None
     ) -> WalletPnLResponse:
+        """Get Wallet PnL.
+
+        Fetches the profit and loss (PnL) for a specific wallet address over a specified time range and granularity.
+
+        Args:
+            params: Parameters for the wallet PnL request
+            options: Optional request configuration
+
+        Returns:
+            Wallet PnL data
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = self._make_request(
             *self._prepare_get_wallet_pnl(params, options)
         )

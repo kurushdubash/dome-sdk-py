@@ -15,11 +15,14 @@ __all__ = ["AsyncMarketEndpoints", "MarketEndpoints"]
 
 
 class BaseMarketEndpoints:
+    """A base class for Market endpoints that encapsulates the core logic of the markets endpoints. Doesn't deal with transport, handled by subclasses."""
+
     def _prepare_get_candlesticks(
         self,
         params: GetCandlesticksParams,
         options: Optional[RequestConfig] = None,
     ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
+        """Prepare the request for get_candlesticks. This does NOT handle transport, but rather prepares a request in the format needed for the BaseClient's _make_request."""
         condition_id = params["condition_id"]
         start_time = params["start_time"]
         end_time = params["end_time"]
@@ -43,6 +46,7 @@ class BaseMarketEndpoints:
     def _parse_get_candlesticks(
         self, raw_response: dict[str, Any]
     ) -> CandlesticksResponse:
+        """Parses the raw json of the get_candlesticks endpoint."""
         # Parse the complex candlestick response structure
         from ..types import CandlestickData, TokenMetadata
 
@@ -84,6 +88,7 @@ class BaseMarketEndpoints:
         params: GetMarketPriceParams,
         options: Optional[RequestConfig] = None,
     ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
+        """Prepare the request to the get_market_price endpoint returns in the format of _make_request format."""
         token_id = params["token_id"]
         at_time = params.get("at_time")
 

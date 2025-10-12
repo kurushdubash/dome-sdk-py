@@ -28,6 +28,7 @@ class BaseMatchingMarketsEndpoints:
         params: GetMatchingMarketsParams,
         options: Optional[RequestConfig] = None,
     ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
+        """Prepare the request for get_matching_markets. This does NOT handle transport, but rather prepares a request in the format needed for the BaseClient's _make_request."""
         query_params: dict[str, Any] = {}
 
         if params.get("polymarket_market_slug"):
@@ -46,6 +47,7 @@ class BaseMatchingMarketsEndpoints:
     def _parse_get_matching_markets(
         self, raw_response: dict[str, Any]
     ) -> MatchingMarketsResponse:
+        """Parses the raw json of the get_matching_markets endpoint."""
         # Parse market data
         parsed_markets: dict[str, list[MarketData]] = {}
 
@@ -76,6 +78,7 @@ class BaseMatchingMarketsEndpoints:
         params: GetMatchingMarketsBySportParams,
         options: Optional[RequestConfig] = None,
     ) -> tuple[str, str, dict[str, Any], Optional[RequestConfig]]:
+        """Prepare the request for get_matching_markets_by_sport. This does NOT handle transport, but rather prepares a request in the format needed for the BaseClient's _make_request."""
         sport = params["sport"]
         date = params["date"]
 
@@ -91,6 +94,7 @@ class BaseMatchingMarketsEndpoints:
     def _parse_get_matching_markets_by_sport(
         self, raw_response: dict[str, Any]
     ) -> MatchingMarketsBySportResponse:
+        """Parses the raw json of the get_matching_markets_by_sport endpoint."""
         # Parse market data
         parsed_markets: dict[str, list[MarketData]] = {}
 
@@ -122,9 +126,28 @@ class BaseMatchingMarketsEndpoints:
 
 
 class AsyncMatchingMarketsEndpoints(AsyncBaseClient, BaseMatchingMarketsEndpoints):
+    """Matching Markets-related endpoints for the Dome API (Async version).
+
+    Handles cross-platform market matching functionality.
+    """
+
     async def get_matching_markets(
         self, params: GetMatchingMarketsParams, options: Optional[RequestConfig] = None
     ) -> MatchingMarketsResponse:
+        """Get Matching Markets for Sports.
+
+        Find equivalent markets across different prediction market platforms (Polymarket, Kalshi, etc.) for sports events.
+
+        Args:
+            params: Parameters for the matching markets request
+            options: Optional request configuration
+
+        Returns:
+            Matching markets data
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = await self._make_request(
             *self._prepare_get_matching_markets(params, options)
         )
@@ -136,6 +159,20 @@ class AsyncMatchingMarketsEndpoints(AsyncBaseClient, BaseMatchingMarketsEndpoint
         params: GetMatchingMarketsBySportParams,
         options: Optional[RequestConfig] = None,
     ) -> MatchingMarketsBySportResponse:
+        """Get Matching Markets for Sports by Sport and Date.
+
+        Find equivalent markets across different prediction market platforms for sports events by sport and date.
+
+        Args:
+            params: Parameters for the matching markets by sport request
+            options: Optional request configuration
+
+        Returns:
+            Matching markets data with sport and date
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = await self._make_request(
             *self._prepare_get_matching_markets_by_sport(params, options)
         )
@@ -144,9 +181,28 @@ class AsyncMatchingMarketsEndpoints(AsyncBaseClient, BaseMatchingMarketsEndpoint
 
 
 class MatchingMarketsEndpoints(BaseClient, BaseMatchingMarketsEndpoints):
+    """Matching Markets-related endpoints for the Dome API.
+
+    Handles cross-platform market matching functionality.
+    """
+
     def get_matching_markets(
         self, params: GetMatchingMarketsParams, options: Optional[RequestConfig] = None
     ) -> MatchingMarketsResponse:
+        """Get Matching Markets for Sports.
+
+        Find equivalent markets across different prediction market platforms (Polymarket, Kalshi, etc.) for sports events.
+
+        Args:
+            params: Parameters for the matching markets request
+            options: Optional request configuration
+
+        Returns:
+            Matching markets data
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = self._make_request(
             *self._prepare_get_matching_markets(params, options)
         )
@@ -158,6 +214,20 @@ class MatchingMarketsEndpoints(BaseClient, BaseMatchingMarketsEndpoints):
         params: GetMatchingMarketsBySportParams,
         options: Optional[RequestConfig] = None,
     ) -> MatchingMarketsBySportResponse:
+        """Get Matching Markets for Sports by Sport and Date.
+
+        Find equivalent markets across different prediction market platforms for sports events by sport and date.
+
+        Args:
+            params: Parameters for the matching markets by sport request
+            options: Optional request configuration
+
+        Returns:
+            Matching markets data with sport and date
+
+        Raises:
+            ValueError: If the request fails
+        """
         raw_response = self._make_request(
             *self._prepare_get_matching_markets_by_sport(params, options)
         )
