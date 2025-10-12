@@ -6,10 +6,11 @@ This script tests the SDK against the live API to ensure all endpoints work corr
 Run with: python -m dome_api_sdk.tests.integration_test <api_key>
 """
 
+import asyncio
 import sys
 from typing import Any, Dict
 
-from dome_api_sdk import DomeClient
+from dome_api_sdk import AsyncDomeClient, DomeClient
 
 
 def _test_market_endpoints(dome: DomeClient) -> Dict[str, Any]:
@@ -175,6 +176,173 @@ def _test_matching_markets_endpoints(dome: DomeClient) -> Dict[str, Any]:
     return results
 
 
+async def _test_async_market_endpoints(dome: AsyncDomeClient) -> Dict[str, Any]:
+    """Test async market-related endpoints."""
+    results = {}
+
+    try:
+        # Test get_market_price
+        print("Testing async get_market_price...")
+        market_price = await dome.polymarket.markets.get_market_price(
+            {
+                "token_id": "18823838997443878656879952590502524526556504037944392973476854588563571859850"
+            }
+        )
+        results["get_market_price"] = {
+            "success": True,
+            "price": market_price.price,
+            "at_time": market_price.at_time,
+        }
+        print(f"✅ async get_market_price: {market_price.price}")
+    except Exception as e:
+        results["get_market_price"] = {"success": False, "error": str(e)}
+        print(f"❌ async get_market_price failed: {e}")
+
+    try:
+        # Test get_market_price with at_time
+        print("Testing async get_market_price with at_time...")
+        market_price_historical = await dome.polymarket.markets.get_market_price(
+            {
+                "token_id": "18823838997443878656879952590502524526556504037944392973476854588563571859850",
+                "at_time": 1759720853,
+            }
+        )
+        results["get_market_price_historical"] = {
+            "success": True,
+            "price": market_price_historical.price,
+            "at_time": market_price_historical.at_time,
+        }
+        print(
+            f"✅ async get_market_price with at_time: {market_price_historical.price} at {market_price_historical.at_time}"
+        )
+    except Exception as e:
+        results["get_market_price_historical"] = {"success": False, "error": str(e)}
+        print(f"❌ async get_market_price with at_time failed: {e}")
+
+    try:
+        # Test get_candlesticks
+        print("Testing async get_candlesticks...")
+        candlesticks = await dome.polymarket.markets.get_candlesticks(
+            {
+                "condition_id": "0x4567b275e6b667a6217f5cb4f06a797d3a1eaf1d0281fb5bc8c75e2046ae7e57",
+                "start_time": 1759471500,
+                "end_time": 1759711620,
+                "interval": 60,
+            }
+        )
+        results["get_candlesticks"] = {
+            "success": True,
+            "candlesticks_count": len(candlesticks.candlesticks),
+        }
+        print(
+            f"✅ async get_candlesticks: {len(candlesticks.candlesticks)} candlesticks"
+        )
+    except Exception as e:
+        results["get_candlesticks"] = {"success": False, "error": str(e)}
+        print(f"❌ async get_candlesticks failed: {e}")
+
+    return results
+
+
+async def _test_async_orders_endpoints(dome: AsyncDomeClient) -> Dict[str, Any]:
+    """Test async orders-related endpoints."""
+    results = {}
+
+    try:
+        # Test get_orders
+        print("Testing async get_orders...")
+        orders = await dome.polymarket.orders.get_orders(
+            {
+                "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
+                "limit": 10,
+                "offset": 0,
+            }
+        )
+        results["get_orders"] = {
+            "success": True,
+            "orders_count": len(orders.orders),
+            "total": orders.pagination.total,
+            "has_more": orders.pagination.has_more,
+        }
+        print(
+            f"✅ async get_orders: {len(orders.orders)} orders (total: {orders.pagination.total})"
+        )
+    except Exception as e:
+        results["get_orders"] = {"success": False, "error": str(e)}
+        print(f"❌ async get_orders failed: {e}")
+
+    return results
+
+
+async def _test_async_matching_markets_endpoints(
+    dome: AsyncDomeClient,
+) -> Dict[str, Any]:
+    """Test async matching markets-related endpoints."""
+    results = {}
+
+    try:
+        # Test get_matching_markets
+        print("Testing async get_matching_markets...")
+        matching_markets = await dome.matching_markets.get_matching_markets(
+            {"polymarket_market_slug": ["nfl-ari-den-2025-08-16"]}
+        )
+        results["get_matching_markets"] = {
+            "success": True,
+            "markets_count": len(matching_markets.markets),
+        }
+        print(
+            f"✅ async get_matching_markets: {len(matching_markets.markets)} market groups"
+        )
+    except Exception as e:
+        results["get_matching_markets"] = {"success": False, "error": str(e)}
+        print(f"❌ async get_matching_markets failed: {e}")
+
+    try:
+        # Test get_matching_markets_by_sport
+        print("Testing async get_matching_markets_by_sport...")
+        matching_markets_by_sport = (
+            await dome.matching_markets.get_matching_markets_by_sport(
+                {"sport": "nfl", "date": "2025-08-16"}
+            )
+        )
+        results["get_matching_markets_by_sport"] = {
+            "success": True,
+            "markets_count": len(matching_markets_by_sport.markets),
+            "sport": matching_markets_by_sport.sport,
+            "date": matching_markets_by_sport.date,
+        }
+        print(
+            f"✅ async get_matching_markets_by_sport: {len(matching_markets_by_sport.markets)} market groups"
+        )
+    except Exception as e:
+        results["get_matching_markets_by_sport"] = {"success": False, "error": str(e)}
+        print(f"❌ async get_matching_markets_by_sport failed: {e}")
+
+    return results
+
+
+async def run_async_tests(api_key: str) -> Dict[str, Dict[str, Any]]:
+    """Run all async integration tests."""
+    # Initialize the async client
+    async_dome = AsyncDomeClient({"api_key": api_key})
+    print(f"✅ Async client initialized with API key: {api_key[:8]}...")
+
+    all_results = {}
+
+    print("\n📊 Testing Async Market Endpoints...")
+    all_results["async_market"] = await _test_async_market_endpoints(async_dome)
+
+    print("\n📋 Testing Async Orders Endpoints...")
+    all_results["async_orders"] = await _test_async_orders_endpoints(async_dome)
+
+    print("\n🔗 Testing Async Matching Markets Endpoints...")
+    all_results["async_matching_markets"] = (
+        await _test_async_matching_markets_endpoints(async_dome)
+    )
+
+    return all_results
+
+
 def main():
     """Run all integration tests."""
     if len(sys.argv) != 2:
@@ -205,6 +373,13 @@ def main():
 
         print("\n🔗 Testing Matching Markets Endpoints...")
         all_results["matching_markets"] = _test_matching_markets_endpoints(dome)
+
+        # Run async tests
+        print("\n" + "=" * 50)
+        print("🔄 Running Async Tests")
+        print("=" * 50)
+        async_results = asyncio.run(run_async_tests(api_key))
+        all_results.update(async_results)
 
         # Summary
         print("\n" + "=" * 50)

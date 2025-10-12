@@ -1,11 +1,28 @@
 """Polymarket client for the Dome SDK."""
 
 from ..types import DomeSDKConfig
-from .market_endpoints import MarketEndpoints
-from .orders_endpoints import OrdersEndpoints
-from .wallet_endpoints import WalletEndpoints
+from .market_endpoints import AsyncMarketEndpoints, MarketEndpoints
+from .orders_endpoints import AsyncOrdersEndpoints, OrdersEndpoints
+from .wallet_endpoints import AsyncWalletEndpoints, WalletEndpoints
 
 __all__ = ["PolymarketClient"]
+
+
+class AsyncPolymarketClient:
+    """Polymarket client that provides access to all Polymarket-related endpoints (Async version).
+
+    Groups market data, wallet analytics, and order functionality.
+    """
+
+    def __init__(self, config: DomeSDKConfig) -> None:
+        """Initialize the Polymarket client.
+
+        Args:
+            config: Configuration options for the SDK
+        """
+        self.markets = AsyncMarketEndpoints(config)
+        self.orders = AsyncOrdersEndpoints(config)
+        self.wallet = AsyncWalletEndpoints(config)
 
 
 class PolymarketClient:
