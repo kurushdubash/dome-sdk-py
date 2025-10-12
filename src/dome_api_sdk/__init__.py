@@ -19,7 +19,7 @@ Example:
     ```
 """
 
-from .client import DomeClient, AsyncDomeClient
+from .client import AsyncDomeClient, DomeClient
 from .types import (
     ApiError,
     CandlestickAskBid,

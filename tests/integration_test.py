@@ -234,7 +234,9 @@ async def _test_async_market_endpoints(dome: AsyncDomeClient) -> Dict[str, Any]:
             "success": True,
             "candlesticks_count": len(candlesticks.candlesticks),
         }
-        print(f"✅ async get_candlesticks: {len(candlesticks.candlesticks)} candlesticks")
+        print(
+            f"✅ async get_candlesticks: {len(candlesticks.candlesticks)} candlesticks"
+        )
     except Exception as e:
         results["get_candlesticks"] = {"success": False, "error": str(e)}
         print(f"❌ async get_candlesticks failed: {e}")
