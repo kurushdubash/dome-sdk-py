@@ -2,8 +2,7 @@
 
 from typing import Any, Optional, Union
 
-from ..base_client import BaseClient
-from ..base_client_async import AsyncBaseClient
+from ..base_client import BaseClient, AsyncBaseClient
 from ..types import (
     CandlesticksResponse,
     GetCandlesticksParams,
