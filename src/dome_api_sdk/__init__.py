@@ -11,7 +11,7 @@ Example:
         async with DomeClient({"api_key": "your-api-key"}) as dome:
             # Get market price
             market_price = await dome.polymarket.markets.get_market_price({
-                "token_id": "1234567890"
+                "token_id": "21742633143463906290569050155826241533067272736897614950488156847949938836455"
             })
             print(f"Market Price: {market_price.price}")
 
