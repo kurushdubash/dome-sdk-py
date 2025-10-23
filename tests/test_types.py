@@ -44,13 +44,13 @@ class TestGetMarketPriceParams:
 
     def test_required_fields(self) -> None:
         """Test required fields."""
-        params = GetMarketPriceParams(token_id="123")
-        assert params["token_id"] == "123"
+        params = GetMarketPriceParams(token_id="21742633143463906290569050155826241533067272736897614950488156847949938836455")
+        assert params["token_id"] == "21742633143463906290569050155826241533067272736897614950488156847949938836455"
 
     def test_optional_fields(self) -> None:
         """Test optional fields."""
-        params = GetMarketPriceParams(token_id="123", at_time=1234567890)
-        assert params["token_id"] == "123"
+        params = GetMarketPriceParams(token_id="21742633143463906290569050155826241533067272736897614950488156847949938836455", at_time=1234567890)
+        assert params["token_id"] == "21742633143463906290569050155826241533067272736897614950488156847949938836455"
         assert params["at_time"] == 1234567890
 
 
@@ -159,7 +159,7 @@ class TestOrderTypes:
     def test_order(self) -> None:
         """Test Order creation."""
         order = Order(
-            token_id="123",
+            token_id="21742633143463906290569050155826241533067272736897614950488156847949938836455",
             side="BUY",
             market_slug="test-market",
             condition_id="0x456",
@@ -172,7 +172,7 @@ class TestOrderTypes:
             order_hash="0xabc",
             user="0xdef",
         )
-        assert order.token_id == "123"
+        assert order.token_id == "21742633143463906290569050155826241533067272736897614950488156847949938836455"
         assert order.side == "BUY"
 
     def test_pagination(self) -> None:
@@ -184,7 +184,7 @@ class TestOrderTypes:
     def test_orders_response(self) -> None:
         """Test OrdersResponse creation."""
         order = Order(
-            token_id="123",
+            token_id="21742633143463906290569050155826241533067272736897614950488156847949938836455",
             side="BUY",
             market_slug="test",
             condition_id="0x456",
@@ -220,7 +220,8 @@ class TestMatchingMarketsTypes:
     def test_polymarket_market(self) -> None:
         """Test PolymarketMarket creation."""
         market = PolymarketMarket(
-            platform="POLYMARKET", market_slug="test-market", token_ids=["123", "456"]
+            platform="POLYMARKET", market_slug="test-market", token_ids=["21742633143463906290569050155826241533067272736897614950488156847949938836455",
+                                                                        "18823838997443878656879952590502524526556504037944392973476854588563571859850"]
         )
         assert market.platform == "POLYMARKET"
         assert market.market_slug == "test-market"

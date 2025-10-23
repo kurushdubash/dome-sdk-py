@@ -34,12 +34,12 @@ class TestMarketEndpoints:
             mock_request.return_value = mock_response
 
             result = client.polymarket.markets.get_market_price(
-                {"token_id": "1234567890"}
+                {"token_id": "18823838997443878656879952590502524526556504037944392973476854588563571859850"}
             )
 
             mock_request.assert_called_once_with(
                 "GET",
-                "/polymarket/market-price/1234567890",
+                "/polymarket/market-price/18823838997443878656879952590502524526556504037944392973476854588563571859850",
                 {},
                 None,
             )
@@ -59,12 +59,12 @@ class TestMarketEndpoints:
             mock_request.return_value = mock_response
 
             result = client.polymarket.markets.get_market_price(
-                {"token_id": "1234567890", "at_time": 1757008834}
+                {"token_id": "18823838997443878656879952590502524526556504037944392973476854588563571859850", "at_time": 1757008834}
             )
 
             mock_request.assert_called_once_with(
                 "GET",
-                "/polymarket/market-price/1234567890",
+                "/polymarket/market-price/18823838997443878656879952590502524526556504037944392973476854588563571859850",
                 {"at_time": 1757008834},
                 None,
             )
@@ -87,7 +87,7 @@ class TestMarketEndpoints:
                             "yes_bid": 0.210,
                         }
                     ],
-                    {"token_id": "1234567890"},
+                    {"token_id": "18823838997443878656879952590502524526556504037944392973476854588563571859850"},
                 ]
             ]
         }
@@ -117,7 +117,7 @@ class TestMarketEndpoints:
                 len(result.candlesticks[0]) == 2
             )  # One CandlestickData and one TokenMetadata
             assert result.candlesticks[0][0].price == 0.215
-            assert result.candlesticks[0][1].token_id == "1234567890"
+            assert result.candlesticks[0][1].token_id == "18823838997443878656879952590502524526556504037944392973476854588563571859850"
 
 
 class TestWalletEndpoints:
@@ -184,17 +184,17 @@ class TestOrdersEndpoints:
         mock_response = {
             "orders": [
                 {
-                    "token_id": "1234567890",
+                    "token_id": "18823838997443878656879952590502524526556504037944392973476854588563571859850",
                     "side": "buy",
                     "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
                     "condition_id": "0x4567b275e6b667a6217f5cb4f06a797d3a1eaf1d0281fb5bc8c75e2046ae7e57",
                     "shares": 100,
                     "shares_normalized": 0.1,
                     "price": 0.65,
-                    "tx_hash": "0x1234567890abcdef",
+                    "tx_hash": "0x18823838997443878656879952590502524526556504037944392973476854588563571859850abcdef",
                     "title": "Bitcoin Price Test",
                     "timestamp": 1640995200,
-                    "order_hash": "0xabcdef1234567890",
+                    "order_hash": "0xabcdef18823838997443878656879952590502524526556504037944392973476854588563571859850",
                     "user": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
                 }
             ],
@@ -225,7 +225,7 @@ class TestOrdersEndpoints:
 
             assert isinstance(result, OrdersResponse)
             assert len(result.orders) == 1
-            assert result.orders[0].token_id == "1234567890"
+            assert result.orders[0].token_id == "18823838997443878656879952590502524526556504037944392973476854588563571859850"
             assert result.orders[0].side == "buy"
             assert result.pagination.total == 1
             assert result.pagination.has_more is False
@@ -247,7 +247,8 @@ class TestMatchingMarketsEndpoints:
                     {
                         "platform": "POLYMARKET",
                         "market_slug": "nfl-ari-den-2025-08-16",
-                        "token_ids": ["1234567890", "0987654321"],
+                        "token_ids": ["18823838997443878656879952590502524526556504037944392973476854588563571859850",
+                                     "21742633143463906290569050155826241533067272736897614950488156847949938836455"],
                     },
                     {
                         "platform": "KALSHI",
@@ -288,7 +289,8 @@ class TestMatchingMarketsEndpoints:
                     {
                         "platform": "POLYMARKET",
                         "market_slug": "nfl-ari-den-2025-08-16",
-                        "token_ids": ["1234567890", "0987654321"],
+                        "token_ids": ["18823838997443878656879952590502524526556504037944392973476854588563571859850",
+                                      "21742633143463906290569050155826241533067272736897614950488156847949938836455"],
                     }
                 ]
             },
