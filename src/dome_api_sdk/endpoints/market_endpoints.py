@@ -7,7 +7,16 @@ from ..types import (
     CandlesticksResponse,
     GetCandlesticksParams,
     GetMarketPriceParams,
+    GetMarketsParams,
+    GetOrderbooksParams,
+    Market,
+    MarketOutcome,
     MarketPriceResponse,
+    MarketsResponse,
+    OrderbookPagination,
+    OrderbookSnapshot,
+    OrderbooksResponse,
+    Pagination,
     RequestConfig,
 )
 
@@ -134,3 +143,163 @@ class MarketEndpoints(BaseClient):
                 candlesticks.append(parsed_tuple)
 
         return CandlesticksResponse(candlesticks=candlesticks)
+
+    def get_markets(
+        self,
+        params: GetMarketsParams,
+        options: Optional[RequestConfig] = None,
+    ) -> MarketsResponse:
+        """Get Markets.
+
+        Fetches market data with optional filtering and search functionality.
+        Supports filtering by market slug, condition ID, or tags, as well as
+        fuzzy search across market titles and descriptions.
+
+        Args:
+            params: Parameters for the markets request
+            options: Optional request configuration
+
+        Returns:
+            Markets data with pagination
+
+        Raises:
+            ValueError: If the request fails
+        """
+        query_params = {}
+
+        # Handle array parameters
+        if params.get("market_slug"):
+            query_params["market_slug"] = params["market_slug"]
+        if params.get("event_slug"):
+            query_params["event_slug"] = params["event_slug"]
+        if params.get("condition_id"):
+            query_params["condition_id"] = params["condition_id"]
+        if params.get("tags"):
+            query_params["tags"] = params["tags"]
+        if params.get("status"):
+            query_params["status"] = params["status"]
+        if params.get("min_volume") is not None:
+            query_params["min_volume"] = params["min_volume"]
+        if params.get("limit") is not None:
+            query_params["limit"] = params["limit"]
+        if params.get("offset") is not None:
+            query_params["offset"] = params["offset"]
+
+        response_data = self._make_request(
+            "GET",
+            "/polymarket/markets",
+            query_params,
+            options,
+        )
+
+        # Parse markets
+        markets = []
+        for market_data in response_data["markets"]:
+            outcomes = []
+            # Handle cases where outcomes might be missing or empty
+            outcomes_data = market_data.get("outcomes", [])
+            for outcome_data in outcomes_data:
+                outcomes.append(
+                    MarketOutcome(
+                        outcome=outcome_data["outcome"],
+                        token_id=outcome_data["token_id"],
+                    )
+                )
+
+            markets.append(
+                Market(
+                    market_slug=market_data["market_slug"],
+                    condition_id=market_data["condition_id"],
+                    title=market_data["title"],
+                    description=market_data.get("description", ""),
+                    outcomes=outcomes,
+                    start_time=market_data["start_time"],
+                    end_time=market_data["end_time"],
+                    volume=market_data.get("volume", 0.0),
+                    liquidity=market_data.get("liquidity", 0.0),
+                    tags=market_data.get("tags", []),
+                    status=market_data["status"],
+                )
+            )
+
+        # Parse pagination
+        pagination_data = response_data["pagination"]
+        pagination = Pagination(
+            limit=pagination_data["limit"],
+            offset=pagination_data["offset"],
+            total=pagination_data["total"],
+            has_more=pagination_data["has_more"],
+        )
+
+        return MarketsResponse(markets=markets, pagination=pagination)
+
+    def get_orderbooks(
+        self,
+        params: GetOrderbooksParams,
+        options: Optional[RequestConfig] = None,
+    ) -> OrderbooksResponse:
+        """Get Orderbook History.
+
+        Fetches historical orderbook snapshots for a specific asset (token ID)
+        over a specified time range.
+
+        Args:
+            params: Parameters for the orderbooks request
+            options: Optional request configuration
+
+        Returns:
+            Orderbook history data with pagination
+
+        Raises:
+            ValueError: If the request fails
+        """
+        token_id = params["token_id"]
+        start_time = params["start_time"]
+        end_time = params["end_time"]
+
+        query_params = {
+            "token_id": token_id,
+            "start_time": start_time,
+            "end_time": end_time,
+        }
+
+        if params.get("limit") is not None:
+            query_params["limit"] = params["limit"]
+        if params.get("pagination_key"):
+            query_params["pagination_key"] = params["pagination_key"]
+
+        response_data = self._make_request(
+            "GET",
+            "/polymarket/orderbooks",
+            query_params,
+            options,
+        )
+
+        # Parse snapshots
+        snapshots = []
+        for snapshot_data in response_data["snapshots"]:
+            snapshots.append(
+                OrderbookSnapshot(
+                    asks=snapshot_data["asks"],
+                    bids=snapshot_data["bids"],
+                    hash=snapshot_data["hash"],
+                    minOrderSize=snapshot_data["minOrderSize"],
+                    negRisk=snapshot_data["negRisk"],
+                    assetId=snapshot_data["assetId"],
+                    timestamp=snapshot_data["timestamp"],
+                    tickSize=snapshot_data["tickSize"],
+                    indexedAt=snapshot_data["indexedAt"],
+                    market=snapshot_data["market"],
+                )
+            )
+
+        # Parse pagination
+        pagination_data = response_data["pagination"]
+        pagination = OrderbookPagination(
+            limit=pagination_data["limit"],
+            count=pagination_data["count"],
+            pagination_key=pagination_data.get("pagination_key"),
+            has_more=pagination_data["has_more"],
+        )
+
+        return OrderbooksResponse(snapshots=snapshots, pagination=pagination)

@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from .endpoints import MatchingMarketsEndpoints, PolymarketClient
+from .endpoints import KalshiClient, MatchingMarketsEndpoints, PolymarketClient
 from .types import DomeSDKConfig
 
 __all__ = ["DomeClient"]
@@ -40,4 +40,5 @@ class DomeClient:
 
         # Initialize all endpoint modules with the same config
         self.polymarket = PolymarketClient(config)
+        self.kalshi = KalshiClient(config)
         self.matching_markets = MatchingMarketsEndpoints(config)

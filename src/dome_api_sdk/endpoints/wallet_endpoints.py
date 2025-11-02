@@ -76,6 +76,6 @@ class WalletEndpoints(BaseClient):
             granularity=response_data["granularity"],
             start_time=response_data["start_time"],
             end_time=response_data["end_time"],
-            wallet_address=response_data["wallet_address"],
+            wallet_address=response_data.get("wallet_address", wallet_address),
             pnl_over_time=pnl_over_time,
         )

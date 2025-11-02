@@ -41,20 +41,24 @@ class OrdersEndpoints(BaseClient):
         """
         query_params = {}
 
+        # Handle array parameters - httpx handles lists correctly for query params
         if params.get("market_slug"):
-            query_params["market_slug"] = params["market_slug"]
+            market_slug = params["market_slug"]
+            query_params["market_slug"] = market_slug
         if params.get("condition_id"):
-            query_params["condition_id"] = params["condition_id"]
+            condition_id = params["condition_id"]
+            query_params["condition_id"] = condition_id
         if params.get("token_id"):
-            query_params["token_id"] = params["token_id"]
+            token_id = params["token_id"]
+            query_params["token_id"] = token_id
         if params.get("start_time") is not None:
-            query_params["start_time"] = str(params["start_time"])
+            query_params["start_time"] = params["start_time"]
         if params.get("end_time") is not None:
-            query_params["end_time"] = str(params["end_time"])
+            query_params["end_time"] = params["end_time"]
         if params.get("limit") is not None:
-            query_params["limit"] = str(params["limit"])
+            query_params["limit"] = params["limit"]
         if params.get("offset") is not None:
-            query_params["offset"] = str(params["offset"])
+            query_params["offset"] = params["offset"]
         if params.get("user"):
             query_params["user"] = params["user"]
 

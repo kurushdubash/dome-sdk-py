@@ -1,6 +1,7 @@
 """Polymarket client for the Dome SDK."""
 
 from ..types import DomeSDKConfig
+from .activity_endpoints import ActivityEndpoints
 from .market_endpoints import MarketEndpoints
 from .orders_endpoints import OrdersEndpoints
 from .wallet_endpoints import WalletEndpoints
@@ -23,3 +24,4 @@ class PolymarketClient:
         self.markets = MarketEndpoints(config)
         self.wallet = WalletEndpoints(config)
         self.orders = OrdersEndpoints(config)
+        self.activity = ActivityEndpoints(config)

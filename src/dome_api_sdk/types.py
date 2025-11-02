@@ -32,6 +32,21 @@ __all__ = [
     "Pagination",
     "OrdersResponse",
     "GetOrdersParams",
+    # Polymarket Orderbooks Types
+    "OrderbookSnapshot",
+    "OrderbookPagination",
+    "OrderbooksResponse",
+    "GetOrderbooksParams",
+    # Polymarket Markets Types
+    "MarketOutcome",
+    "Market",
+    "MarketsResponse",
+    "GetMarketsParams",
+    # Polymarket Activity Types
+    "Activity",
+    "ActivityPagination",
+    "ActivityResponse",
+    "GetActivityParams",
     # Matching Markets Types
     "KalshiMarket",
     "PolymarketMarket",
@@ -40,6 +55,16 @@ __all__ = [
     "GetMatchingMarketsParams",
     "GetMatchingMarketsBySportParams",
     "MatchingMarketsBySportResponse",
+    # Kalshi Markets Types
+    "KalshiMarketData",
+    "KalshiMarketsResponse",
+    "GetKalshiMarketsParams",
+    # Kalshi Orderbooks Types
+    "KalshiOrderbook",
+    "KalshiOrderbookSnapshot",
+    "KalshiOrderbookPagination",
+    "KalshiOrderbooksResponse",
+    "GetKalshiOrderbooksParams",
     # Error Types
     "ApiError",
     "ValidationError",
@@ -302,8 +327,10 @@ class Order:
     side: Literal["BUY", "SELL"]
     market_slug: str
     condition_id: str
-    shares: int
-    shares_normalized: float
+    shares: int  # Raw number of shares purchased (from the blockchain)
+    shares_normalized: (
+        float  # Number of shares purchased normalized (this is raw divided by 1000000)
+    )
     price: float
     tx_hash: str
     title: str
@@ -346,9 +373,9 @@ class GetOrdersParams(TypedDict, total=False):
     """Parameters for getting orders.
 
     Attributes:
-        market_slug: Market slug (optional)
-        condition_id: Condition ID (optional)
-        token_id: Token ID (optional)
+        market_slug: Market slug (optional). Can provide multiple values as array.
+        condition_id: Condition ID (optional). Can provide multiple values as array.
+        token_id: Token ID (optional). Can provide multiple values as array.
         start_time: Start time as Unix timestamp (optional)
         end_time: End time as Unix timestamp (optional)
         limit: Limit (optional)
@@ -356,9 +383,9 @@ class GetOrdersParams(TypedDict, total=False):
         user: User address (optional)
     """
 
-    market_slug: Optional[str]
-    condition_id: Optional[str]
-    token_id: Optional[str]
+    market_slug: Optional[Union[str, List[str]]]
+    condition_id: Optional[Union[str, List[str]]]
+    token_id: Optional[Union[str, List[str]]]
     start_time: Optional[int]
     end_time: Optional[int]
     limit: Optional[int]
@@ -433,7 +460,7 @@ class GetMatchingMarketsBySportParams(TypedDict, total=False):
         date: Date in YYYY-MM-DD format (required)
     """
 
-    sport: Literal["nfl", "mlb"]
+    sport: Literal["nfl", "mlb", "cfb", "nba", "nhl"]
     date: str
 
 
@@ -479,3 +506,401 @@ class ValidationError(ApiError):
     """
 
     required: Optional[str] = None
+
+
+# ===== Polymarket Orderbooks Types =====
+
+
+@dataclass(frozen=True)
+class OrderbookSnapshot:
+    """Orderbook snapshot data.
+
+    Attributes:
+        asks: Sell orders, ordered by price
+        bids: Buy orders, ordered by price
+        hash: Snapshot hash
+        minOrderSize: Minimum order size
+        negRisk: Negative risk flag
+        assetId: Asset ID
+        timestamp: Timestamp of the snapshot in milliseconds
+        tickSize: Tick size
+        indexedAt: When the snapshot was indexed in milliseconds
+        market: Market identifier
+    """
+
+    asks: List[Dict[str, str]]
+    bids: List[Dict[str, str]]
+    hash: str
+    minOrderSize: str
+    negRisk: bool
+    assetId: str
+    timestamp: int
+    tickSize: str
+    indexedAt: int
+    market: str
+
+
+@dataclass(frozen=True)
+class OrderbookPagination:
+    """Orderbook pagination data.
+
+    Attributes:
+        limit: Limit
+        count: Number of snapshots returned
+        pagination_key: The pagination key to pass in to get the next chunk of data
+        has_more: Whether there are more snapshots available
+    """
+
+    limit: int
+    count: int
+    pagination_key: Optional[str]
+    has_more: bool
+
+
+@dataclass(frozen=True)
+class OrderbooksResponse:
+    """Response from the orderbooks endpoint.
+
+    Attributes:
+        snapshots: Array of orderbook snapshots at different points in time
+        pagination: Pagination information
+    """
+
+    snapshots: List[OrderbookSnapshot]
+    pagination: OrderbookPagination
+
+
+class GetOrderbooksParams(TypedDict, total=False):
+    """Parameters for getting orderbooks.
+
+    Attributes:
+        token_id: The token id (asset) for the Polymarket market (required)
+        start_time: Start time in Unix timestamp (milliseconds) (required)
+        end_time: End time in Unix timestamp (milliseconds) (required)
+        limit: Maximum number of snapshots to return (optional, default: 100, max: 500)
+        pagination_key: Pagination key to get the next chunk of data (optional)
+    """
+
+    token_id: str
+    start_time: int
+    end_time: int
+    limit: Optional[int]
+    pagination_key: Optional[str]
+
+
+# ===== Polymarket Markets Types =====
+
+
+@dataclass(frozen=True)
+class MarketOutcome:
+    """Market outcome data.
+
+    Attributes:
+        outcome: Outcome name
+        token_id: Token ID for the outcome
+    """
+
+    outcome: str
+    token_id: str
+
+
+@dataclass(frozen=True)
+class Market:
+    """Market data.
+
+    Attributes:
+        market_slug: Market slug
+        condition_id: Condition ID
+        title: Market title
+        description: Market description
+        outcomes: List of market outcomes
+        start_time: Unix timestamp in seconds when the market starts
+        end_time: Unix timestamp in seconds when the market ends
+        volume: Total trading volume in USD
+        liquidity: Total liquidity in USD
+        tags: List of tags
+        status: Market status (open or closed)
+    """
+
+    market_slug: str
+    condition_id: str
+    title: str
+    description: str
+    outcomes: List[MarketOutcome]
+    start_time: int
+    end_time: int
+    volume: float
+    liquidity: float
+    tags: List[str]
+    status: Literal["open", "closed"]
+
+
+@dataclass(frozen=True)
+class MarketsResponse:
+    """Response from the markets endpoint.
+
+    Attributes:
+        markets: List of markets
+        pagination: Pagination information
+    """
+
+    markets: List[Market]
+    pagination: Pagination
+
+
+class GetMarketsParams(TypedDict, total=False):
+    """Parameters for getting markets.
+
+    Attributes:
+        market_slug: Filter markets by market slug(s). Can provide multiple values.
+        event_slug: Filter markets by event slug(s). Can provide multiple values.
+        condition_id: Filter markets by condition ID(s). Can provide multiple values.
+        tags: Filter markets by tag(s). Can provide multiple values.
+        status: Filter markets by status (whether they're open or closed)
+        min_volume: Filter markets with total trading volume greater than or equal to this amount (USD)
+        limit: Number of markets to return (1-100). Default: 10
+        offset: Number of markets to skip for pagination
+    """
+
+    market_slug: Optional[Union[str, List[str]]]
+    event_slug: Optional[Union[str, List[str]]]
+    condition_id: Optional[Union[str, List[str]]]
+    tags: Optional[Union[str, List[str]]]
+    status: Optional[Literal["open", "closed"]]
+    min_volume: Optional[float]
+    limit: Optional[int]
+    offset: Optional[int]
+
+
+# ===== Polymarket Activity Types =====
+
+
+@dataclass(frozen=True)
+class Activity:
+    """Activity data.
+
+    Attributes:
+        token_id: Token ID
+        side: Activity side (MERGE, SPLIT, or REDEEM)
+        market_slug: Market slug
+        condition_id: Condition ID
+        shares: Raw number of shares (from the blockchain)
+        shares_normalized: Number of shares normalized (raw divided by 1000000)
+        price: Price
+        tx_hash: Transaction hash
+        title: Market title
+        timestamp: Unix timestamp in seconds when the activity occurred
+        order_hash: Order hash
+        user: User wallet address
+    """
+
+    token_id: str
+    side: Literal["MERGE", "SPLIT", "REDEEM"]
+    market_slug: str
+    condition_id: str
+    shares: int
+    shares_normalized: float
+    price: float
+    tx_hash: str
+    title: str
+    timestamp: int
+    order_hash: str
+    user: str
+
+
+@dataclass(frozen=True)
+class ActivityPagination:
+    """Activity pagination data.
+
+    Attributes:
+        limit: Limit
+        offset: Offset
+        count: Total number of activities matching the filters
+        has_more: Whether there are more activities available
+    """
+
+    limit: int
+    offset: int
+    count: int
+    has_more: bool
+
+
+@dataclass(frozen=True)
+class ActivityResponse:
+    """Response from the activity endpoint.
+
+    Attributes:
+        activities: List of activities
+        pagination: Pagination information
+    """
+
+    activities: List[Activity]
+    pagination: ActivityPagination
+
+
+class GetActivityParams(TypedDict, total=False):
+    """Parameters for getting activity.
+
+    Attributes:
+        user: User wallet address to fetch activity for (required)
+        start_time: Filter activity from this Unix timestamp in seconds (inclusive) (optional)
+        end_time: Filter activity until this Unix timestamp in seconds (inclusive) (optional)
+        market_slug: Filter activity by market slug (optional)
+        condition_id: Filter activity by condition ID (optional)
+        limit: Number of activities to return (1-1000) (optional, default: 100)
+        offset: Number of activities to skip for pagination (optional)
+    """
+
+    user: str
+    start_time: Optional[int]
+    end_time: Optional[int]
+    market_slug: Optional[str]
+    condition_id: Optional[str]
+    limit: Optional[int]
+    offset: Optional[int]
+
+
+# ===== Kalshi Markets Types =====
+
+
+@dataclass(frozen=True)
+class KalshiMarketData:
+    """Kalshi market data.
+
+    Attributes:
+        event_ticker: The Kalshi event ticker
+        market_ticker: The Kalshi market ticker
+        title: Market question/title
+        start_time: Unix timestamp in seconds when the market opens
+        end_time: Unix timestamp in seconds when the market is scheduled to end
+        close_time: Unix timestamp in seconds when the market actually resolves/closes (may be before end_time if market finishes early, null if not yet closed)
+        status: Market status
+        last_price: Last traded price in cents
+        volume: Total trading volume in cents
+        volume_24h: 24-hour trading volume in cents
+        result: Market result (null if unresolved)
+    """
+
+    event_ticker: str
+    market_ticker: str
+    title: str
+    start_time: int
+    end_time: int
+    close_time: Optional[int]
+    status: Literal["open", "closed"]
+    last_price: float
+    volume: float
+    volume_24h: float
+    result: Optional[str]
+
+
+@dataclass(frozen=True)
+class KalshiMarketsResponse:
+    """Response from the Kalshi markets endpoint.
+
+    Attributes:
+        markets: List of Kalshi markets
+        pagination: Pagination information
+    """
+
+    markets: List[KalshiMarketData]
+    pagination: Pagination
+
+
+class GetKalshiMarketsParams(TypedDict, total=False):
+    """Parameters for getting Kalshi markets.
+
+    Attributes:
+        market_ticker: Filter markets by market ticker(s). Can provide multiple values.
+        event_ticker: Filter markets by event ticker(s). Can provide multiple values.
+        status: Filter markets by status (whether they're open or closed)
+        min_volume: Filter markets with total trading volume greater than or equal to this amount (in cents)
+        limit: Number of markets to return (1-100). Default: 10
+        offset: Number of markets to skip for pagination
+    """
+
+    market_ticker: Optional[Union[str, List[str]]]
+    event_ticker: Optional[Union[str, List[str]]]
+    status: Optional[Literal["open", "closed"]]
+    min_volume: Optional[float]
+    limit: Optional[int]
+    offset: Optional[int]
+
+
+# ===== Kalshi Orderbooks Types =====
+
+
+@dataclass(frozen=True)
+class KalshiOrderbook:
+    """Kalshi orderbook data.
+
+    Attributes:
+        yes: Yes side orders with prices in cents (array of [price_in_cents, contract_count])
+        no: No side orders with prices in cents (array of [price_in_cents, contract_count])
+        yes_dollars: Yes side orders with prices in dollars (array of [price_as_dollar_string, contract_count])
+        no_dollars: No side orders with prices in dollars (array of [price_as_dollar_string, contract_count])
+    """
+
+    yes: List[List[float]]
+    no: List[List[float]]
+    yes_dollars: List[List[Union[str, float]]]
+    no_dollars: List[List[Union[str, float]]]
+
+
+@dataclass(frozen=True)
+class KalshiOrderbookSnapshot:
+    """Kalshi orderbook snapshot data.
+
+    Attributes:
+        orderbook: Orderbook data
+        timestamp: Timestamp of the snapshot in milliseconds
+        ticker: The Kalshi market ticker
+    """
+
+    orderbook: KalshiOrderbook
+    timestamp: int
+    ticker: str
+
+
+@dataclass(frozen=True)
+class KalshiOrderbookPagination:
+    """Kalshi orderbook pagination data.
+
+    Attributes:
+        limit: Limit
+        count: Number of snapshots returned
+        has_more: Whether there are more snapshots available
+    """
+
+    limit: int
+    count: int
+    has_more: bool
+
+
+@dataclass(frozen=True)
+class KalshiOrderbooksResponse:
+    """Response from the Kalshi orderbooks endpoint.
+
+    Attributes:
+        snapshots: Array of orderbook snapshots at different points in time
+        pagination: Pagination information
+    """
+
+    snapshots: List[KalshiOrderbookSnapshot]
+    pagination: KalshiOrderbookPagination
+
+
+class GetKalshiOrderbooksParams(TypedDict, total=False):
+    """Parameters for getting Kalshi orderbooks.
+
+    Attributes:
+        ticker: The Kalshi market ticker (required)
+        start_time: Start time in Unix timestamp (milliseconds) (required)
+        end_time: End time in Unix timestamp (milliseconds) (required)
+        limit: Maximum number of snapshots to return (default: 100, max: 500) (optional)
+    """
+
+    ticker: str
+    start_time: int
+    end_time: int
+    limit: Optional[int]

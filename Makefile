@@ -1,21 +1,22 @@
-.PHONY: help install install-dev test test-cov lint format type-check clean build publish release test-release
+.PHONY: help install install-dev test test-cov integration-test lint format type-check clean build publish release test-release
 
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  install      Install package in development mode"
-	@echo "  install-dev  Install package with development dependencies"
-	@echo "  test         Run tests"
-	@echo "  test-cov     Run tests with coverage"
-	@echo "  lint         Run linting (flake8)"
-	@echo "  format       Format code (black, isort)"
-	@echo "  type-check   Run type checking (mypy)"
-	@echo "  clean        Clean build artifacts"
-	@echo "  build        Build package"
-	@echo "  publish      Publish package to PyPI"
-	@echo "  release      Full release process (clean, validate, build, publish)"
-	@echo "  test-release Full release process to Test PyPI"
-	@echo "  dev-setup    Set up development environment"
+	@echo "  install         Install package in development mode"
+	@echo "  install-dev     Install package with development dependencies"
+	@echo "  test            Run tests"
+	@echo "  test-cov        Run tests with coverage"
+	@echo "  integration-test Run integration tests (requires API_KEY env var or: make integration-test API_KEY=your_key)"
+	@echo "  lint            Run linting (flake8)"
+	@echo "  format          Format code (black, isort)"
+	@echo "  type-check      Run type checking (mypy)"
+	@echo "  clean           Clean build artifacts"
+	@echo "  build           Build package"
+	@echo "  publish         Publish package to PyPI"
+	@echo "  release         Full release process (clean, validate, build, publish)"
+	@echo "  test-release    Full release process to Test PyPI"
+	@echo "  dev-setup       Set up development environment"
 
 # Installation
 install:
@@ -34,6 +35,32 @@ test:
 
 test-cov:
 	pytest --cov=dome_api_sdk --cov-report=term-missing --cov-report=html
+
+# Integration testing
+integration-test:
+	@if [ -z "$(API_KEY)" ] && [ -z "$$DOME_API_KEY" ]; then \
+		echo "❌ Error: API_KEY is required."; \
+		echo "Usage: make integration-test API_KEY=your_api_key"; \
+		echo "   or: API_KEY=your_api_key make integration-test"; \
+		echo "   or: export DOME_API_KEY=your_api_key && make integration-test"; \
+		exit 1; \
+	fi
+	@echo "🧪 Running integration tests..."
+	@echo "📦 Ensuring SDK is installed in development mode..."
+	@pip install -e . --quiet 2>/dev/null || { \
+		echo "   Installing package..."; \
+		pip install -e .; \
+	}
+	@echo "✅ SDK ready for testing"
+	@if [ -n "$(API_KEY)" ]; then \
+		API_KEY_VAL="$(API_KEY)"; \
+	else \
+		API_KEY_VAL="$$DOME_API_KEY"; \
+	fi; \
+	python3 -m dome_api_sdk.tests.integration_test $$API_KEY_VAL || { \
+		echo "⚠️  Module import failed, trying with PYTHONPATH..."; \
+		PYTHONPATH=$$(pwd)/src:$$PYTHONPATH python3 tests/integration_test.py $$API_KEY_VAL; \
+	}
 
 # Linting and formatting
 lint:
@@ -127,7 +154,7 @@ release:
 	@$(MAKE) publish
 	@echo ""
 	@echo "🎉 Release completed successfully!"
-	@echo "Package version: $$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+	@echo "Package version: $$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
 
 # Test release process - same as release but uploads to Test PyPI
 test-release:

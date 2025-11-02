@@ -75,33 +75,226 @@ def _test_market_endpoints(dome: DomeClient) -> Dict[str, Any]:
         results["get_candlesticks"] = {"success": False, "error": str(e)}
         print(f"❌ get_candlesticks failed: {e}")
 
+    try:
+        # Test get_markets
+        print("Testing get_markets...")
+        markets = dome.polymarket.markets.get_markets(
+            {
+                "status": "open",
+                "limit": 5,
+                "offset": 0,
+            }
+        )
+        results["get_markets"] = {
+            "success": True,
+            "markets_count": len(markets.markets),
+            "total": markets.pagination.total,
+            "has_more": markets.pagination.has_more,
+        }
+        print(
+            f"✅ get_markets: {len(markets.markets)} markets (total: {markets.pagination.total})"
+        )
+    except Exception as e:
+        results["get_markets"] = {"success": False, "error": str(e)}
+        print(f"❌ get_markets failed: {e}")
+
+    try:
+        # Test get_markets with filters
+        print("Testing get_markets with market_slug filter...")
+        markets_filtered = dome.polymarket.markets.get_markets(
+            {
+                "market_slug": ["bitcoin-up-or-down-july-25-8pm-et"],
+                "limit": 10,
+            }
+        )
+        results["get_markets_filtered"] = {
+            "success": True,
+            "markets_count": len(markets_filtered.markets),
+        }
+        print(f"✅ get_markets (filtered): {len(markets_filtered.markets)} markets")
+    except Exception as e:
+        results["get_markets_filtered"] = {"success": False, "error": str(e)}
+        print(f"❌ get_markets (filtered) failed: {e}")
+
+    try:
+        # Test get_orderbooks
+        print("Testing get_orderbooks...")
+        # Using a timestamp in milliseconds for a recent date
+        orderbooks = dome.polymarket.markets.get_orderbooks(
+            {
+                "token_id": "18823838997443878656879952590502524526556504037944392973476854588563571859850",
+                "start_time": 1760470000000,  # milliseconds
+                "end_time": 1760480000000,  # milliseconds
+                "limit": 10,
+            }
+        )
+        results["get_orderbooks"] = {
+            "success": True,
+            "snapshots_count": len(orderbooks.snapshots),
+            "has_more": orderbooks.pagination.has_more,
+        }
+        print(
+            f"✅ get_orderbooks: {len(orderbooks.snapshots)} snapshots (has_more: {orderbooks.pagination.has_more})"
+        )
+    except Exception as e:
+        results["get_orderbooks"] = {"success": False, "error": str(e)}
+        print(f"❌ get_orderbooks failed: {e}")
+
     return results
 
 
-# def _test_wallet_endpoints(dome: DomeClient) -> Dict[str, Any]:
-#     """Test wallet-related endpoints."""
-#     results = {}
+def _test_wallet_endpoints(dome: DomeClient) -> Dict[str, Any]:
+    """Test wallet-related endpoints."""
+    results = {}
 
-#     try:
-#         # Test get_wallet_pnl
-#         print("Testing get_wallet_pnl...")
-#         wallet_pnl = dome.polymarket.wallet.get_wallet_pnl({
-#             "wallet_address": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
-#             "granularity": "day",
-#             "start_time": 1726857600,
-#             "end_time": 1758316829
-#         })
-#         results["get_wallet_pnl"] = {
-#             "success": True,
-#             "data_points": len(wallet_pnl.pnl_over_time),
-#             "granularity": wallet_pnl.granularity
-#         }
-#         print(f"✅ get_wallet_pnl: {len(wallet_pnl.pnl_over_time)} data points")
-#     except Exception as e:
-#         results["get_wallet_pnl"] = {"success": False, "error": str(e)}
-#         print(f"❌ get_wallet_pnl failed: {e}")
+    try:
+        # Test get_wallet_pnl
+        print("Testing get_wallet_pnl...")
+        wallet_pnl = dome.polymarket.wallet.get_wallet_pnl(
+            {
+                "wallet_address": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+                "granularity": "day",
+                "start_time": 1726857600,
+                "end_time": 1758316829,
+            }
+        )
+        results["get_wallet_pnl"] = {
+            "success": True,
+            "data_points": len(wallet_pnl.pnl_over_time),
+            "granularity": wallet_pnl.granularity,
+        }
+        print(f"✅ get_wallet_pnl: {len(wallet_pnl.pnl_over_time)} data points")
+    except Exception as e:
+        results["get_wallet_pnl"] = {"success": False, "error": str(e)}
+        print(f"❌ get_wallet_pnl failed: {e}")
 
-#     return results
+    return results
+
+
+def _test_activity_endpoints(dome: DomeClient) -> Dict[str, Any]:
+    """Test activity-related endpoints."""
+    results = {}
+
+    try:
+        # Test get_activity
+        print("Testing get_activity...")
+        activity = dome.polymarket.activity.get_activity(
+            {
+                "user": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+                "limit": 10,
+                "offset": 0,
+            }
+        )
+        results["get_activity"] = {
+            "success": True,
+            "activities_count": len(activity.activities),
+            "count": activity.pagination.count,
+            "has_more": activity.pagination.has_more,
+        }
+        print(
+            f"✅ get_activity: {len(activity.activities)} activities (total: {activity.pagination.count})"
+        )
+    except Exception as e:
+        results["get_activity"] = {"success": False, "error": str(e)}
+        print(f"❌ get_activity failed: {e}")
+
+    try:
+        # Test get_activity with time range
+        print("Testing get_activity with time range...")
+        activity_filtered = dome.polymarket.activity.get_activity(
+            {
+                "user": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+                "start_time": 1726857600,
+                "end_time": 1758316829,
+                "limit": 5,
+            }
+        )
+        results["get_activity_filtered"] = {
+            "success": True,
+            "activities_count": len(activity_filtered.activities),
+        }
+        print(
+            f"✅ get_activity (filtered): {len(activity_filtered.activities)} activities"
+        )
+    except Exception as e:
+        results["get_activity_filtered"] = {"success": False, "error": str(e)}
+        print(f"❌ get_activity (filtered) failed: {e}")
+
+    return results
+
+
+def _test_kalshi_endpoints(dome: DomeClient) -> Dict[str, Any]:
+    """Test Kalshi-related endpoints."""
+    results = {}
+
+    try:
+        # Test get_kalshi_markets
+        print("Testing get_kalshi_markets...")
+        kalshi_markets = dome.kalshi.markets.get_markets(
+            {
+                "status": "open",
+                "limit": 5,
+                "offset": 0,
+            }
+        )
+        results["get_kalshi_markets"] = {
+            "success": True,
+            "markets_count": len(kalshi_markets.markets),
+            "total": kalshi_markets.pagination.total,
+            "has_more": kalshi_markets.pagination.has_more,
+        }
+        print(
+            f"✅ get_kalshi_markets: {len(kalshi_markets.markets)} markets (total: {kalshi_markets.pagination.total})"
+        )
+    except Exception as e:
+        results["get_kalshi_markets"] = {"success": False, "error": str(e)}
+        print(f"❌ get_kalshi_markets failed: {e}")
+
+    try:
+        # Test get_kalshi_markets with array filters
+        print("Testing get_kalshi_markets with array filters...")
+        kalshi_markets_filtered = dome.kalshi.markets.get_markets(
+            {
+                "market_ticker": ["KXNFLGAME-25AUG16ARIDEN-ARI"],
+                "limit": 5,
+            }
+        )
+        results["get_kalshi_markets_filtered"] = {
+            "success": True,
+            "markets_count": len(kalshi_markets_filtered.markets),
+        }
+        print(
+            f"✅ get_kalshi_markets (filtered): {len(kalshi_markets_filtered.markets)} markets"
+        )
+    except Exception as e:
+        results["get_kalshi_markets_filtered"] = {"success": False, "error": str(e)}
+        print(f"❌ get_kalshi_markets (filtered) failed: {e}")
+
+    try:
+        # Test get_kalshi_orderbooks
+        print("Testing get_kalshi_orderbooks...")
+        # Using a timestamp in milliseconds for a recent date
+        kalshi_orderbooks = dome.kalshi.orderbooks.get_orderbooks(
+            {
+                "ticker": "KXNFLGAME-25AUG16ARIDEN-ARI",
+                "start_time": 1760470000000,  # milliseconds
+                "end_time": 1760480000000,  # milliseconds
+                "limit": 10,
+            }
+        )
+        results["get_kalshi_orderbooks"] = {
+            "success": True,
+            "snapshots_count": len(kalshi_orderbooks.snapshots),
+            "has_more": kalshi_orderbooks.pagination.has_more,
+        }
+        print(
+            f"✅ get_kalshi_orderbooks: {len(kalshi_orderbooks.snapshots)} snapshots (has_more: {kalshi_orderbooks.pagination.has_more})"
+        )
+    except Exception as e:
+        results["get_kalshi_orderbooks"] = {"success": False, "error": str(e)}
+        print(f"❌ get_kalshi_orderbooks failed: {e}")
+
+    return results
 
 
 def _test_orders_endpoints(dome: DomeClient) -> Dict[str, Any]:
@@ -131,6 +324,42 @@ def _test_orders_endpoints(dome: DomeClient) -> Dict[str, Any]:
         results["get_orders"] = {"success": False, "error": str(e)}
         print(f"❌ get_orders failed: {e}")
 
+    try:
+        # Test get_orders with array parameter
+        print("Testing get_orders with array market_slug...")
+        orders_array = dome.polymarket.orders.get_orders(
+            {
+                "market_slug": ["bitcoin-up-or-down-july-25-8pm-et"],
+                "limit": 5,
+            }
+        )
+        results["get_orders_array"] = {
+            "success": True,
+            "orders_count": len(orders_array.orders),
+        }
+        print(f"✅ get_orders (array): {len(orders_array.orders)} orders")
+    except Exception as e:
+        results["get_orders_array"] = {"success": False, "error": str(e)}
+        print(f"❌ get_orders (array) failed: {e}")
+
+    try:
+        # Test get_orders with user filter
+        print("Testing get_orders with user filter...")
+        orders_user = dome.polymarket.orders.get_orders(
+            {
+                "user": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+                "limit": 5,
+            }
+        )
+        results["get_orders_user"] = {
+            "success": True,
+            "orders_count": len(orders_user.orders),
+        }
+        print(f"✅ get_orders (user): {len(orders_user.orders)} orders")
+    except Exception as e:
+        results["get_orders_user"] = {"success": False, "error": str(e)}
+        print(f"❌ get_orders (user) failed: {e}")
+
     return results
 
 
@@ -152,6 +381,28 @@ def _test_matching_markets_endpoints(dome: DomeClient) -> Dict[str, Any]:
     except Exception as e:
         results["get_matching_markets"] = {"success": False, "error": str(e)}
         print(f"❌ get_matching_markets failed: {e}")
+
+    try:
+        # Test get_matching_markets with multiple slugs
+        print("Testing get_matching_markets with multiple slugs...")
+        matching_markets_multi = dome.matching_markets.get_matching_markets(
+            {
+                "polymarket_market_slug": [
+                    "nfl-ari-den-2025-08-16",
+                    "nfl-dal-phi-2025-09-04",
+                ]
+            }
+        )
+        results["get_matching_markets_multi"] = {
+            "success": True,
+            "markets_count": len(matching_markets_multi.markets),
+        }
+        print(
+            f"✅ get_matching_markets (multi): {len(matching_markets_multi.markets)} market groups"
+        )
+    except Exception as e:
+        results["get_matching_markets_multi"] = {"success": False, "error": str(e)}
+        print(f"❌ get_matching_markets (multi) failed: {e}")
 
     try:
         # Test get_matching_markets_by_sport
@@ -197,14 +448,20 @@ def main():
         print("\n📊 Testing Market Endpoints...")
         all_results["market"] = _test_market_endpoints(dome)
 
-        # print("\n💰 Testing Wallet Endpoints...")
-        # all_results["wallet"] = _test_wallet_endpoints(dome)
+        print("\n💰 Testing Wallet Endpoints...")
+        all_results["wallet"] = _test_wallet_endpoints(dome)
 
         print("\n📋 Testing Orders Endpoints...")
         all_results["orders"] = _test_orders_endpoints(dome)
 
+        print("\n📝 Testing Activity Endpoints...")
+        all_results["activity"] = _test_activity_endpoints(dome)
+
         print("\n🔗 Testing Matching Markets Endpoints...")
         all_results["matching_markets"] = _test_matching_markets_endpoints(dome)
+
+        print("\n🎯 Testing Kalshi Endpoints...")
+        all_results["kalshi"] = _test_kalshi_endpoints(dome)
 
         # Summary
         print("\n" + "=" * 50)
