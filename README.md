@@ -67,6 +67,46 @@ from dome_api_sdk import DomeClient
 client = DomeClient()
 ```
 
+## API Reference
+
+### Complete API Endpoint List
+
+The Dome SDK provides access to the following API endpoints, organized by platform:
+
+#### Polymarket Endpoints
+
+All Polymarket endpoints are accessed through `dome.polymarket.*`:
+
+| Category | Method | Description | Endpoint Path |
+|----------|--------|-------------|---------------|
+| **Markets** | `markets.get_market_price()` | Get current or historical market price by token ID | `/polymarket/market-price/{token_id}` |
+| **Markets** | `markets.get_candlesticks()` | Get historical candlestick data for a market | `/polymarket/candlesticks/{condition_id}` |
+| **Markets** | `markets.get_markets()` | Get market data with filtering (slug, tags, status, etc.) | `/polymarket/markets` |
+| **Markets** | `markets.get_orderbooks()` | Get historical orderbook snapshots for an asset | `/polymarket/orderbooks` |
+| **Orders** | `orders.get_orders()` | Get order data with filtering (market, user, time range, etc.) | `/polymarket/orders` |
+| **Wallet** | `wallet.get_wallet_pnl()` | Get realized profit and loss (PnL) for a wallet | `/polymarket/wallet/pnl/{wallet_address}` |
+| **Activity** | `activity.get_activity()` | Get trading activity (MERGE, SPLIT, REDEEM) for a user | `/polymarket/activity` |
+
+#### Kalshi Endpoints
+
+All Kalshi endpoints are accessed through `dome.kalshi.*`:
+
+| Category | Method | Description | Endpoint Path |
+|----------|--------|-------------|---------------|
+| **Markets** | `markets.get_markets()` | Get Kalshi market data with filtering | `/kalshi/markets` |
+| **Orderbooks** | `orderbooks.get_orderbooks()` | Get historical Kalshi orderbook snapshots | `/kalshi/orderbooks` |
+
+#### Matching Markets Endpoints
+
+Cross-platform market matching endpoints are accessed through `dome.matching_markets.*`:
+
+| Method | Description | Endpoint Path |
+|--------|-------------|---------------|
+| `get_matching_markets()` | Find equivalent markets across platforms by Polymarket slug or Kalshi ticker | `/matching-markets/sports/` |
+| `get_matching_markets_by_sport()` | Find equivalent markets by sport and date | `/matching-markets/sports/{sport}/` |
+
+---
+
 ## API Endpoints
 
 ### Market Price
@@ -110,6 +150,54 @@ candlesticks = dome.polymarket.markets.get_candlesticks({
 print(f"Candlesticks: {len(candlesticks.candlesticks)}")
 ```
 
+### Markets
+
+Get market data with filtering and search:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+# Get markets by status
+markets = dome.polymarket.markets.get_markets({
+    "status": "open",
+    "limit": 20,
+    "min_volume": 100000
+})
+print(f"Markets: {len(markets.markets)}")
+
+# Get markets by slug(s)
+markets_filtered = dome.polymarket.markets.get_markets({
+    "market_slug": ["bitcoin-up-or-down-july-25-8pm-et"],
+    "limit": 10
+})
+
+# Get markets by tags
+markets_by_tags = dome.polymarket.markets.get_markets({
+    "tags": ["crypto", "politics"],
+    "status": "open"
+})
+```
+
+### Orderbooks
+
+Get historical orderbook snapshots:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+orderbooks = dome.polymarket.markets.get_orderbooks({
+    "token_id": "18823838997443878656879952590502524526556504037944392973476854588563571859850",
+    "start_time": 1760470000000,  # milliseconds
+    "end_time": 1760480000000,    # milliseconds
+    "limit": 100
+})
+print(f"Orderbook snapshots: {len(orderbooks.snapshots)}")
+```
+
 ### Orders
 
 Get order data with filtering:
@@ -119,6 +207,7 @@ from dome_api_sdk import DomeClient
 
 dome = DomeClient({"api_key": "your-api-key"})
 
+# Get orders by market slug
 orders = dome.polymarket.orders.get_orders({
     "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
     "limit": 50,
@@ -127,6 +216,96 @@ orders = dome.polymarket.orders.get_orders({
     "end_time": 1672531200
 })
 print(f"Orders: {len(orders.orders)}")
+
+# Get orders by user
+user_orders = dome.polymarket.orders.get_orders({
+    "user": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+    "limit": 100
+})
+
+# Get orders with array filters
+orders_array = dome.polymarket.orders.get_orders({
+    "market_slug": ["slug1", "slug2"],
+    "limit": 50
+})
+```
+
+### Wallet PnL
+
+Get realized profit and loss for a wallet:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+wallet_pnl = dome.polymarket.wallet.get_wallet_pnl({
+    "wallet_address": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+    "granularity": "day",
+    "start_time": 1726857600,
+    "end_time": 1758316829
+})
+print(f"PnL data points: {len(wallet_pnl.pnl_over_time)}")
+```
+
+### Activity
+
+Get trading activity (MERGE, SPLIT, REDEEM) for a user:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+activity = dome.polymarket.activity.get_activity({
+    "user": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+    "start_time": 1726857600,
+    "end_time": 1758316829,
+    "limit": 50
+})
+print(f"Activities: {len(activity.activities)}")
+```
+
+### Kalshi Markets
+
+Get Kalshi market data:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+# Get Kalshi markets
+kalshi_markets = dome.kalshi.markets.get_markets({
+    "status": "open",
+    "limit": 20,
+    "min_volume": 10000000  # in cents
+})
+print(f"Kalshi markets: {len(kalshi_markets.markets)}")
+
+# Get Kalshi markets by ticker(s)
+kalshi_filtered = dome.kalshi.markets.get_markets({
+    "market_ticker": ["KXNFLGAME-25AUG16ARIDEN-ARI"],
+    "limit": 10
+})
+```
+
+### Kalshi Orderbooks
+
+Get historical Kalshi orderbook snapshots:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+kalshi_orderbooks = dome.kalshi.orderbooks.get_orderbooks({
+    "ticker": "KXNFLGAME-25AUG16ARIDEN-ARI",
+    "start_time": 1760470000000,  # milliseconds
+    "end_time": 1760480000000,    # milliseconds
+    "limit": 100
+})
+print(f"Kalshi orderbook snapshots: {len(kalshi_orderbooks.snapshots)}")
 ```
 
 ### Matching Markets
