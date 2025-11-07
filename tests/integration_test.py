@@ -99,19 +99,75 @@ def _test_market_endpoints(dome: DomeClient) -> Dict[str, Any]:
         print(f"❌ get_markets failed: {e}")
 
     try:
-        # Test get_markets with filters
+        # Test get_markets with filters and validate all fields
         print("Testing get_markets with market_slug filter...")
+        # Test with string (single value)
         markets_filtered = dome.polymarket.markets.get_markets(
             {
-                "market_slug": ["bitcoin-up-or-down-july-25-8pm-et"],
+                "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
                 "limit": 10,
             }
         )
-        results["get_markets_filtered"] = {
-            "success": True,
-            "markets_count": len(markets_filtered.markets),
-        }
-        print(f"✅ get_markets (filtered): {len(markets_filtered.markets)} markets")
+
+        # Validate all fields from the response
+        if markets_filtered.markets:
+            market = markets_filtered.markets[0]
+            validation_results = {
+                "market_slug": market.market_slug
+                == "bitcoin-up-or-down-july-25-8pm-et",
+                "title": isinstance(market.title, str) and len(market.title) > 0,
+                "condition_id": isinstance(market.condition_id, str)
+                and len(market.condition_id) > 0,
+                "start_time": isinstance(market.start_time, int),
+                "end_time": isinstance(market.end_time, int),
+                "completed_time": market.completed_time is None
+                or isinstance(market.completed_time, int),
+                "close_time": market.close_time is None
+                or isinstance(market.close_time, int),
+                "tags": isinstance(market.tags, list),
+                "volume_1_week": isinstance(market.volume_1_week, (int, float)),
+                "volume_1_month": isinstance(market.volume_1_month, (int, float)),
+                "volume_1_year": isinstance(market.volume_1_year, (int, float)),
+                "volume_total": isinstance(market.volume_total, (int, float)),
+                "resolution_source": isinstance(market.resolution_source, str),
+                "image": isinstance(market.image, str),
+                "side_a": isinstance(market.side_a.id, str)
+                and isinstance(market.side_a.label, str),
+                "side_b": isinstance(market.side_b.id, str)
+                and isinstance(market.side_b.label, str),
+                "winning_side": market.winning_side is None
+                or (
+                    isinstance(market.winning_side.id, str)
+                    and isinstance(market.winning_side.label, str)
+                ),
+                "status": market.status in ["open", "closed"],
+            }
+
+            all_valid = all(validation_results.values())
+            results["get_markets_filtered"] = {
+                "success": True,
+                "markets_count": len(markets_filtered.markets),
+                "field_validation": validation_results,
+                "all_fields_valid": all_valid,
+            }
+
+            if all_valid:
+                print(
+                    f"✅ get_markets (filtered): {len(markets_filtered.markets)} markets - all fields validated"
+                )
+            else:
+                invalid_fields = [k for k, v in validation_results.items() if not v]
+                print(
+                    f"⚠️  get_markets (filtered): {len(markets_filtered.markets)} markets - invalid fields: {invalid_fields}"
+                )
+        else:
+            results["get_markets_filtered"] = {
+                "success": True,
+                "markets_count": 0,
+                "field_validation": {},
+                "all_fields_valid": False,
+            }
+            print("✅ get_markets (filtered): 0 markets (no markets found)")
     except Exception as e:
         results["get_markets_filtered"] = {"success": False, "error": str(e)}
         print(f"❌ get_markets (filtered) failed: {e}")

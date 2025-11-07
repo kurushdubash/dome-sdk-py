@@ -1,6 +1,6 @@
 """Wallet-related endpoints for the Dome API."""
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from ..base_client import BaseClient
 from ..types import (
@@ -43,15 +43,15 @@ class WalletEndpoints(BaseClient):
         start_time = params.get("start_time")
         end_time = params.get("end_time")
 
-        query_params: Dict[str, str] = {
+        query_params: Dict[str, Any] = {
             "granularity": granularity,
         }
 
         if start_time is not None:
-            query_params["start_time"] = str(start_time)
+            query_params["start_time"] = start_time
 
         if end_time is not None:
-            query_params["end_time"] = str(end_time)
+            query_params["end_time"] = end_time
 
         response_data = self._make_request(
             "GET",

@@ -51,8 +51,8 @@ from .types import (
     KalshiOrderbooksResponse,
     Market,
     MarketData,
-    MarketOutcome,
     MarketPriceResponse,
+    MarketSide,
     MarketsResponse,
     MatchingMarketsBySportResponse,
     MatchingMarketsResponse,
@@ -106,7 +106,7 @@ __all__ = [
     "OrderbooksResponse",
     "GetOrderbooksParams",
     # Polymarket Markets Types
-    "MarketOutcome",
+    "MarketSide",
     "Market",
     "MarketsResponse",
     "GetMarketsParams",

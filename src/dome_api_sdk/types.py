@@ -38,7 +38,7 @@ __all__ = [
     "OrderbooksResponse",
     "GetOrderbooksParams",
     # Polymarket Markets Types
-    "MarketOutcome",
+    "MarketSide",
     "Market",
     "MarketsResponse",
     "GetMarketsParams",
@@ -592,16 +592,16 @@ class GetOrderbooksParams(TypedDict, total=False):
 
 
 @dataclass(frozen=True)
-class MarketOutcome:
-    """Market outcome data.
+class MarketSide:
+    """Market side/outcome data.
 
     Attributes:
-        outcome: Outcome name
-        token_id: Token ID for the outcome
+        id: Token ID for the side
+        label: Label for the side
     """
 
-    outcome: str
-    token_id: str
+    id: str
+    label: str
 
 
 @dataclass(frozen=True)
@@ -612,26 +612,40 @@ class Market:
         market_slug: Market slug
         condition_id: Condition ID
         title: Market title
-        description: Market description
-        outcomes: List of market outcomes
         start_time: Unix timestamp in seconds when the market starts
         end_time: Unix timestamp in seconds when the market ends
-        volume: Total trading volume in USD
-        liquidity: Total liquidity in USD
+        completed_time: Unix timestamp in seconds when the market was completed (nullable)
+        close_time: Unix timestamp in seconds when the market was closed (nullable)
         tags: List of tags
+        volume_1_week: Trading volume in USD for the past week
+        volume_1_month: Trading volume in USD for the past month
+        volume_1_year: Trading volume in USD for the past year
+        volume_total: Total trading volume in USD
+        resolution_source: URL to the data source used for market resolution
+        image: URL to the market image
+        side_a: First side/outcome of the market
+        side_b: Second side/outcome of the market
+        winning_side: The winning side of the market (null if not yet resolved), contains id and label
         status: Market status (open or closed)
     """
 
     market_slug: str
     condition_id: str
     title: str
-    description: str
-    outcomes: List[MarketOutcome]
     start_time: int
     end_time: int
-    volume: float
-    liquidity: float
+    completed_time: Optional[int]
+    close_time: Optional[int]
     tags: List[str]
+    volume_1_week: float
+    volume_1_month: float
+    volume_1_year: float
+    volume_total: float
+    resolution_source: str
+    image: str
+    side_a: MarketSide
+    side_b: MarketSide
+    winning_side: Optional[MarketSide]
     status: Literal["open", "closed"]
 
 
@@ -789,8 +803,8 @@ class KalshiMarketData:
     close_time: Optional[int]
     status: Literal["open", "closed"]
     last_price: float
-    volume: float
-    volume_24h: float
+    volume: float  # Total trading volume in dollars
+    volume_24h: float  # 24-hour trading volume in dollars
     result: Optional[str]
 
 

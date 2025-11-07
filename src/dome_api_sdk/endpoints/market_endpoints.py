@@ -1,6 +1,6 @@
 """Market-related endpoints for the Dome API."""
 
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from ..base_client import BaseClient
 from ..types import (
@@ -10,8 +10,8 @@ from ..types import (
     GetMarketsParams,
     GetOrderbooksParams,
     Market,
-    MarketOutcome,
     MarketPriceResponse,
+    MarketSide,
     MarketsResponse,
     OrderbookPagination,
     OrderbookSnapshot,
@@ -165,7 +165,7 @@ class MarketEndpoints(BaseClient):
         Raises:
             ValueError: If the request fails
         """
-        query_params = {}
+        query_params: Dict[str, Any] = {}
 
         # Handle array parameters
         if params.get("market_slug"):
@@ -195,15 +195,27 @@ class MarketEndpoints(BaseClient):
         # Parse markets
         markets = []
         for market_data in response_data["markets"]:
-            outcomes = []
-            # Handle cases where outcomes might be missing or empty
-            outcomes_data = market_data.get("outcomes", [])
-            for outcome_data in outcomes_data:
-                outcomes.append(
-                    MarketOutcome(
-                        outcome=outcome_data["outcome"],
-                        token_id=outcome_data["token_id"],
-                    )
+            # Parse side_a
+            side_a_data = market_data["side_a"]
+            side_a = MarketSide(
+                id=side_a_data["id"],
+                label=side_a_data["label"],
+            )
+
+            # Parse side_b
+            side_b_data = market_data["side_b"]
+            side_b = MarketSide(
+                id=side_b_data["id"],
+                label=side_b_data["label"],
+            )
+
+            # Parse winning_side (nullable)
+            winning_side = None
+            if market_data.get("winning_side") is not None:
+                winning_side_data = market_data["winning_side"]
+                winning_side = MarketSide(
+                    id=winning_side_data["id"],
+                    label=winning_side_data["label"],
                 )
 
             markets.append(
@@ -211,13 +223,20 @@ class MarketEndpoints(BaseClient):
                     market_slug=market_data["market_slug"],
                     condition_id=market_data["condition_id"],
                     title=market_data["title"],
-                    description=market_data.get("description", ""),
-                    outcomes=outcomes,
                     start_time=market_data["start_time"],
                     end_time=market_data["end_time"],
-                    volume=market_data.get("volume", 0.0),
-                    liquidity=market_data.get("liquidity", 0.0),
+                    completed_time=market_data.get("completed_time"),
+                    close_time=market_data.get("close_time"),
                     tags=market_data.get("tags", []),
+                    volume_1_week=market_data.get("volume_1_week", 0.0),
+                    volume_1_month=market_data.get("volume_1_month", 0.0),
+                    volume_1_year=market_data.get("volume_1_year", 0.0),
+                    volume_total=market_data.get("volume_total", 0.0),
+                    resolution_source=market_data.get("resolution_source", ""),
+                    image=market_data.get("image", ""),
+                    side_a=side_a,
+                    side_b=side_b,
+                    winning_side=winning_side,
                     status=market_data["status"],
                 )
             )

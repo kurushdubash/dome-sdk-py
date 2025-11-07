@@ -1,6 +1,6 @@
 """Kalshi-related endpoints for the Dome API."""
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from ..base_client import BaseClient
 from ..types import (
@@ -45,7 +45,7 @@ class KalshiEndpoints(BaseClient):
         Raises:
             ValueError: If the request fails
         """
-        query_params = {}
+        query_params: Dict[str, Any] = {}
 
         # Handle array parameters
         if params.get("market_ticker"):
