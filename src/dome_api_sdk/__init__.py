@@ -65,9 +65,15 @@ from .types import (
     PnLDataPoint,
     PolymarketMarket,
     RequestConfig,
+    SubscribeFilters,
+    SubscribeMessage,
+    SubscriptionAcknowledgment,
     TokenMetadata,
+    UnsubscribeMessage,
     ValidationError,
     WalletPnLResponse,
+    WebSocketOrderEvent,
+    ActiveSubscription,
 )
 
 __version__ = "0.1.1"
@@ -138,6 +144,13 @@ __all__ = [
     "ValidationError",
     # HTTP Client Types
     "HTTPMethod",
+    # WebSocket Types
+    "SubscribeFilters",
+    "SubscribeMessage",
+    "UnsubscribeMessage",
+    "SubscriptionAcknowledgment",
+    "WebSocketOrderEvent",
+    "ActiveSubscription",
     # Package info
     "__version__",
 ]

@@ -6,10 +6,11 @@ This script tests the SDK against the live API to ensure all endpoints work corr
 Run with: python -m dome_api_sdk.tests.integration_test <api_key>
 """
 
+import asyncio
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
-from dome_api_sdk import DomeClient
+from dome_api_sdk import DomeClient, WebSocketOrderEvent
 
 
 def _test_market_endpoints(dome: DomeClient) -> Dict[str, Any]:
@@ -482,6 +483,110 @@ def _test_matching_markets_endpoints(dome: DomeClient) -> Dict[str, Any]:
     return results
 
 
+async def _test_websocket_endpoints(dome: DomeClient) -> Dict[str, Any]:
+    """Test WebSocket-related endpoints."""
+    results = {}
+    ws_client = dome.polymarket.websocket
+    subscription_id: Optional[str] = None
+
+    try:
+        print("Testing WebSocket connection and subscription...")
+
+        # Event received flag
+        event_received = asyncio.Event()
+        received_event: Optional[WebSocketOrderEvent] = None
+
+        def on_order_event(event: WebSocketOrderEvent) -> None:
+            """Handle order event."""
+            nonlocal received_event
+            received_event = event
+            event_received.set()
+
+        # Connect to WebSocket
+        await ws_client.connect()
+        print("✅ WebSocket connected")
+
+        # Subscribe to orders for the specified user
+        subscription_id = await ws_client.subscribe(
+            users=["0x6031b6eed1c97e853c6e0f03ad3ce3529351f96d"],
+            on_event=on_order_event,
+        )
+        print(f"✅ Subscribed to orders (subscription_id: {subscription_id})")
+
+        # Check active subscriptions
+        active_subscriptions = ws_client.get_active_subscriptions()
+        if len(active_subscriptions) == 1:
+            print(f"✅ Active subscriptions tracked correctly: {len(active_subscriptions)}")
+        else:
+            print(
+                f"⚠️  Expected 1 active subscription, got {len(active_subscriptions)}"
+            )
+
+        # Wait up to 30 seconds for an order event
+        print("Waiting up to 30 seconds for an order event...")
+        try:
+            await asyncio.wait_for(event_received.wait(), timeout=30.0)
+            print("✅ Order event received!")
+
+            if received_event:
+                results["websocket_subscription"] = {
+                    "success": True,
+                    "subscription_id": received_event.subscription_id,
+                    "order_token_id": received_event.data.token_id,
+                    "order_user": received_event.data.user,
+                    "order_side": received_event.data.side,
+                    "order_market_slug": received_event.data.market_slug,
+                }
+                print(
+                    f"✅ Order event details: user={received_event.data.user}, "
+                    f"side={received_event.data.side}, market={received_event.data.market_slug}"
+                )
+            else:
+                results["websocket_subscription"] = {
+                    "success": False,
+                    "error": "Event received but data is None",
+                }
+                print("❌ Event received but data is None")
+
+        except asyncio.TimeoutError:
+            results["websocket_subscription"] = {
+                "success": False,
+                "error": "Timeout: No order event received within 30 seconds",
+            }
+            print("❌ Timeout: No order event received within 30 seconds")
+
+        # Test unsubscribe
+        if subscription_id:
+            try:
+                await ws_client.unsubscribe(subscription_id)
+                print(f"✅ Unsubscribed successfully (subscription_id: {subscription_id})")
+
+                # Verify subscription was removed
+                active_after_unsubscribe = ws_client.get_active_subscriptions()
+                if len(active_after_unsubscribe) == 0:
+                    print("✅ Subscription removed from active subscriptions")
+                else:
+                    print(
+                        f"⚠️  Expected 0 active subscriptions after unsubscribe, got {len(active_after_unsubscribe)}"
+                    )
+
+            except Exception as e:
+                print(f"⚠️  Unsubscribe failed: {e}")
+
+    except Exception as e:
+        results["websocket_subscription"] = {"success": False, "error": str(e)}
+        print(f"❌ WebSocket test failed: {e}")
+    finally:
+        # Always disconnect, even if there was an error
+        try:
+            await ws_client.disconnect()
+            print("✅ WebSocket disconnected")
+        except Exception as e:
+            print(f"⚠️  Error disconnecting WebSocket: {e}")
+
+    return results
+
+
 def main():
     """Run all integration tests."""
     if len(sys.argv) != 2:
@@ -518,6 +623,9 @@ def main():
 
         print("\n🎯 Testing Kalshi Endpoints...")
         all_results["kalshi"] = _test_kalshi_endpoints(dome)
+
+        print("\n🔌 Testing WebSocket Endpoints...")
+        all_results["websocket"] = asyncio.run(_test_websocket_endpoints(dome))
 
         # Summary
         print("\n" + "=" * 50)

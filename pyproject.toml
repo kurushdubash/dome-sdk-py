@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dome-api-sdk"
-version = "0.1.4"
+version = "0.1.5"
 description = "The Dome SDK - A comprehensive Python SDK for Dome API"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -31,6 +31,7 @@ classifiers = [
 dependencies = [
     "httpx>=0.24.0",
     "typing-extensions>=4.5.0; python_version<'3.10'",
+    "websockets>=12.0",
 ]
 
 [project.optional-dependencies]

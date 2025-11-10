@@ -70,6 +70,13 @@ __all__ = [
     "ValidationError",
     # HTTP Client Types
     "HTTPMethod",
+    # WebSocket Types
+    "SubscribeFilters",
+    "SubscribeMessage",
+    "UnsubscribeMessage",
+    "SubscriptionAcknowledgment",
+    "WebSocketOrderEvent",
+    "ActiveSubscription",
 ]
 
 # Type aliases
@@ -918,3 +925,89 @@ class GetKalshiOrderbooksParams(TypedDict, total=False):
     start_time: int
     end_time: int
     limit: Optional[int]
+
+
+# ===== WebSocket Types =====
+
+
+class SubscribeFilters(TypedDict):
+    """Filters for WebSocket subscription.
+
+    Attributes:
+        users: Array of wallet addresses to track
+    """
+
+    users: List[str]
+
+
+class SubscribeMessage(TypedDict):
+    """WebSocket subscription message.
+
+    Attributes:
+        action: Must be "subscribe"
+        platform: Must be "polymarket"
+        version: Currently 1
+        type: Must be "orders"
+        filters: Subscription filters
+    """
+
+    action: Literal["subscribe"]
+    platform: Literal["polymarket"]
+    version: int
+    type: Literal["orders"]
+    filters: SubscribeFilters
+
+
+class UnsubscribeMessage(TypedDict):
+    """WebSocket unsubscribe message.
+
+    Attributes:
+        action: Must be "unsubscribe"
+        version: Currently 1
+        subscription_id: The subscription ID to unsubscribe from
+    """
+
+    action: Literal["unsubscribe"]
+    version: int
+    subscription_id: str
+
+
+@dataclass(frozen=True)
+class SubscriptionAcknowledgment:
+    """WebSocket subscription acknowledgment.
+
+    Attributes:
+        type: Always "ack"
+        subscription_id: The subscription ID assigned by the server
+    """
+
+    type: Literal["ack"]
+    subscription_id: str
+
+
+@dataclass(frozen=True)
+class WebSocketOrderEvent:
+    """WebSocket order event.
+
+    Attributes:
+        type: Always "event"
+        subscription_id: The subscription ID that triggered this event
+        data: Order information matching the format of the orders API
+    """
+
+    type: Literal["event"]
+    subscription_id: str
+    data: Order
+
+
+@dataclass(frozen=True)
+class ActiveSubscription:
+    """Active subscription information.
+
+    Attributes:
+        subscription_id: The subscription ID assigned by the server
+        request: The original subscription request
+    """
+
+    subscription_id: str
+    request: SubscribeMessage
