@@ -84,6 +84,9 @@ All Polymarket endpoints are accessed through `dome.polymarket.*`:
 | **Markets** | `markets.get_markets()` | Get market data with filtering (slug, tags, status, etc.) | `/polymarket/markets` |
 | **Markets** | `markets.get_orderbooks()` | Get historical orderbook snapshots for an asset | `/polymarket/orderbooks` |
 | **Orders** | `orders.get_orders()` | Get order data with filtering (market, user, time range, etc.) | `/polymarket/orders` |
+| **WebSocket** | `websocket.subscribe()` | Subscribe to real-time order events via WebSocket | `wss://ws.domeapi.io/{api_key}` |
+| **WebSocket** | `websocket.unsubscribe()` | Unsubscribe from order events | `wss://ws.domeapi.io/{api_key}` |
+| **WebSocket** | `websocket.get_active_subscriptions()` | Get all active subscriptions | N/A |
 | **Wallet** | `wallet.get_wallet_pnl()` | Get realized profit and loss (PnL) for a wallet | `/polymarket/wallet/pnl/{wallet_address}` |
 | **Activity** | `activity.get_activity()` | Get trading activity (MERGE, SPLIT, REDEEM) for a user | `/polymarket/activity` |
 
@@ -229,6 +232,159 @@ orders_array = dome.polymarket.orders.get_orders({
     "limit": 50
 })
 ```
+
+### WebSocket - Real-time Order Events
+
+Subscribe to real-time Polymarket order data via WebSocket. The SDK automatically handles reconnection with exponential backoff and subscription management.
+
+#### Basic Usage
+
+```python
+import asyncio
+from dome_api_sdk import DomeClient, WebSocketOrderEvent
+
+async def main():
+    dome = DomeClient({"api_key": "your-api-key"})
+    ws_client = dome.polymarket.websocket
+
+    # Define event handler
+    def on_order_event(event: WebSocketOrderEvent):
+        print(f"New order: {event.data.side} {event.data.shares_normalized} shares")
+        print(f"Market: {event.data.market_slug}")
+        print(f"User: {event.data.user}")
+        print(f"Price: {event.data.price}")
+
+    # Connect and subscribe
+    await ws_client.connect()
+    subscription_id = await ws_client.subscribe(
+        users=["0x6031b6eed1c97e853c6e0f03ad3ce3529351f96d"],
+        on_event=on_order_event
+    )
+    print(f"Subscribed with ID: {subscription_id}")
+
+    # Keep running to receive events
+    await asyncio.sleep(60)
+
+    # Unsubscribe when done
+    await ws_client.unsubscribe(subscription_id)
+    await ws_client.disconnect()
+
+asyncio.run(main())
+```
+
+#### Using Context Manager
+
+```python
+import asyncio
+from dome_api_sdk import DomeClient, WebSocketOrderEvent
+
+async def main():
+    dome = DomeClient({"api_key": "your-api-key"})
+    ws_client = dome.polymarket.websocket
+
+    def on_order_event(event: WebSocketOrderEvent):
+        print(f"Order event: {event.data}")
+
+    # Context manager handles connection/disconnection
+    async with ws_client:
+        subscription_id = await ws_client.subscribe(
+            users=["0x6031b6eed1c97e853c6e0f03ad3ce3529351f96d"],
+            on_event=on_order_event
+        )
+
+        # Keep running
+        await asyncio.sleep(60)
+
+        # Unsubscribe before exiting context
+        await ws_client.unsubscribe(subscription_id)
+
+asyncio.run(main())
+```
+
+#### Multiple Subscriptions
+
+```python
+import asyncio
+from dome_api_sdk import DomeClient, WebSocketOrderEvent
+
+async def main():
+    dome = DomeClient({"api_key": "your-api-key"})
+    ws_client = dome.polymarket.websocket
+
+    def on_order_event(event: WebSocketOrderEvent):
+        print(f"Order from subscription {event.subscription_id}: {event.data.user}")
+
+    await ws_client.connect()
+
+    # Subscribe to multiple users
+    sub1 = await ws_client.subscribe(
+        users=["0x6031b6eed1c97e853c6e0f03ad3ce3529351f96d"],
+        on_event=on_order_event
+    )
+
+    sub2 = await ws_client.subscribe(
+        users=["0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b"],
+        on_event=on_order_event
+    )
+
+    # Get all active subscriptions
+    active = ws_client.get_active_subscriptions()
+    print(f"Active subscriptions: {len(active)}")
+    for sub in active:
+        print(f"  - {sub.subscription_id}: {sub.request['filters']['users']}")
+
+    await asyncio.sleep(60)
+
+    # Unsubscribe from all
+    for sub in active:
+        await ws_client.unsubscribe(sub.subscription_id)
+
+    await ws_client.disconnect()
+
+asyncio.run(main())
+```
+
+#### Automatic Reconnection
+
+The SDK automatically handles reconnection with exponential backoff (up to 10 retries) and re-subscribes to all active subscriptions:
+
+```python
+import asyncio
+from dome_api_sdk import DomeClient, WebSocketOrderEvent
+
+async def main():
+    dome = DomeClient({"api_key": "your-api-key"})
+    ws_client = dome.polymarket.websocket
+
+    def on_order_event(event: WebSocketOrderEvent):
+        print(f"Order: {event.data}")
+
+    await ws_client.connect()
+    subscription_id = await ws_client.subscribe(
+        users=["0x6031b6eed1c97e853c6e0f03ad3ce3529351f96d"],
+        on_event=on_order_event
+    )
+
+    # If connection drops, SDK will:
+    # 1. Attempt to reconnect with exponential backoff (1s, 2s, 4s, 8s, ...)
+    # 2. Automatically re-subscribe to all active subscriptions
+    # 3. Continue receiving events seamlessly
+
+    await asyncio.sleep(300)  # Run for 5 minutes
+
+    await ws_client.unsubscribe(subscription_id)
+    await ws_client.disconnect()
+
+asyncio.run(main())
+```
+
+#### WebSocket Features
+
+- **Automatic Reconnection**: Exponential backoff up to 10 retries
+- **Subscription Management**: Track and manage all active subscriptions
+- **Event Handling**: Callback-based event processing
+- **Re-subscription**: Automatically re-subscribes on reconnection
+- **Type Safety**: Full type hints for all WebSocket messages and events
 
 ### Wallet PnL
 
