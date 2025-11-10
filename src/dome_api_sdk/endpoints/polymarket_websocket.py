@@ -68,7 +68,9 @@ class PolymarketWebSocketClient:
         """
         self._api_key = api_key or os.getenv("DOME_API_KEY", "")
         if not self._api_key:
-            raise ValueError("API key is required. Provide it or set DOME_API_KEY env var.")
+            raise ValueError(
+                "API key is required. Provide it or set DOME_API_KEY env var."
+            )
 
         self._ws_url = f"wss://ws.domeapi.io/{self._api_key}"
         self._websocket: Optional[WebSocketClientProtocol] = None
@@ -81,7 +83,9 @@ class PolymarketWebSocketClient:
         # Track subscriptions: subscription_id -> ActiveSubscription
         self._active_subscriptions: Dict[str, ActiveSubscription] = {}
         # Track pending subscriptions waiting for ack: request_id -> (SubscribeMessage, Event)
-        self._pending_subscriptions: Dict[str, Tuple[SubscribeMessage, asyncio.Event]] = {}
+        self._pending_subscriptions: Dict[
+            str, Tuple[SubscribeMessage, asyncio.Event]
+        ] = {}
         # Track subscription_id -> request_id mapping for ack handling
         self._subscription_id_to_request_id: Dict[str, str] = {}
 
@@ -173,7 +177,9 @@ class PolymarketWebSocketClient:
             logger.info(f"Sent subscription request for users: {users}")
 
             # Wait for acknowledgment (with timeout)
-            subscription_id = await self._wait_for_subscription_ack(request_id, ack_event, timeout=10.0)
+            subscription_id = await self._wait_for_subscription_ack(
+                request_id, ack_event, timeout=10.0
+            )
 
             # Move from pending to active
             if request_id in self._pending_subscriptions:
@@ -181,7 +187,9 @@ class PolymarketWebSocketClient:
             if request_id in self._subscription_id_to_request_id.values():
                 # Remove reverse mapping
                 self._subscription_id_to_request_id = {
-                    k: v for k, v in self._subscription_id_to_request_id.items() if v != request_id
+                    k: v
+                    for k, v in self._subscription_id_to_request_id.items()
+                    if v != request_id
                 }
 
             self._active_subscriptions[subscription_id] = ActiveSubscription(
@@ -275,7 +283,9 @@ class PolymarketWebSocketClient:
             if subscription_id:
                 # Find the pending subscription - we'll match the first pending one
                 # since the server doesn't send back a request identifier
-                for request_id, (pending_msg, ack_event) in list(self._pending_subscriptions.items()):
+                for request_id, (pending_msg, ack_event) in list(
+                    self._pending_subscriptions.items()
+                ):
                     # Match the first pending subscription
                     self._subscription_id_to_request_id[subscription_id] = request_id
                     # Signal the waiting coroutine
@@ -347,7 +357,9 @@ class PolymarketWebSocketClient:
         if not self._active_subscriptions:
             return
 
-        logger.info(f"Re-subscribing to {len(self._active_subscriptions)} subscriptions")
+        logger.info(
+            f"Re-subscribing to {len(self._active_subscriptions)} subscriptions"
+        )
 
         # Create a copy of active subscriptions to re-subscribe
         subscriptions_to_resubscribe = list(self._active_subscriptions.values())
@@ -365,7 +377,9 @@ class PolymarketWebSocketClient:
                     f"Re-subscribed: old_id={sub.subscription_id}, new_id={new_subscription_id}"
                 )
             except Exception as e:
-                logger.error(f"Failed to re-subscribe for users {sub.request['filters']['users']}: {e}")
+                logger.error(
+                    f"Failed to re-subscribe for users {sub.request['filters']['users']}: {e}"
+                )
 
     async def _handle_disconnection(self) -> None:
         """Handle disconnection and attempt to reconnect."""
@@ -400,9 +414,13 @@ class PolymarketWebSocketClient:
                 logger.info("Successfully reconnected")
                 return
             except Exception as e:
-                logger.error(f"Reconnection attempt {self._reconnect_attempts} failed: {e}")
+                logger.error(
+                    f"Reconnection attempt {self._reconnect_attempts} failed: {e}"
+                )
                 if self._reconnect_attempts >= self._max_reconnect_attempts:
-                    logger.error("Max reconnection attempts reached. Stopping reconnection attempts.")
+                    logger.error(
+                        "Max reconnection attempts reached. Stopping reconnection attempts."
+                    )
                     self._connected = False
                     return
 
@@ -414,4 +432,3 @@ class PolymarketWebSocketClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.disconnect()
-

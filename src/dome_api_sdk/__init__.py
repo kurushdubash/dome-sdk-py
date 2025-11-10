@@ -21,6 +21,7 @@ Example:
 
 from .client import DomeClient
 from .types import (
+    ActiveSubscription,
     Activity,
     ActivityPagination,
     ActivityResponse,
@@ -73,7 +74,6 @@ from .types import (
     ValidationError,
     WalletPnLResponse,
     WebSocketOrderEvent,
-    ActiveSubscription,
 )
 
 __version__ = "0.1.1"

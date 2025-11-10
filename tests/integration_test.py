@@ -516,11 +516,11 @@ async def _test_websocket_endpoints(dome: DomeClient) -> Dict[str, Any]:
         # Check active subscriptions
         active_subscriptions = ws_client.get_active_subscriptions()
         if len(active_subscriptions) == 1:
-            print(f"✅ Active subscriptions tracked correctly: {len(active_subscriptions)}")
-        else:
             print(
-                f"⚠️  Expected 1 active subscription, got {len(active_subscriptions)}"
+                f"✅ Active subscriptions tracked correctly: {len(active_subscriptions)}"
             )
+        else:
+            print(f"⚠️  Expected 1 active subscription, got {len(active_subscriptions)}")
 
         # Wait up to 30 seconds for an order event
         print("Waiting up to 30 seconds for an order event...")
@@ -559,7 +559,9 @@ async def _test_websocket_endpoints(dome: DomeClient) -> Dict[str, Any]:
         if subscription_id:
             try:
                 await ws_client.unsubscribe(subscription_id)
-                print(f"✅ Unsubscribed successfully (subscription_id: {subscription_id})")
+                print(
+                    f"✅ Unsubscribed successfully (subscription_id: {subscription_id})"
+                )
 
                 # Verify subscription was removed
                 active_after_unsubscribe = ws_client.get_active_subscriptions()
