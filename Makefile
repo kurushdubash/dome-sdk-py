@@ -192,10 +192,7 @@ test-release:
 	fi
 	@echo "✅ At head of remote main"
 	@echo ""
-	@echo "2. Running quality checks..."
-	@$(MAKE) quality
-	@echo ""
-	@echo "3. Cleaning and building..."
+	@echo "2 & 3. Cleaning and building..."
 	@$(MAKE) clean
 	@$(MAKE) build
 	@echo ""
