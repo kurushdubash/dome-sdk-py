@@ -8,6 +8,7 @@ help:
 	@echo "  test            Run tests"
 	@echo "  test-cov        Run tests with coverage"
 	@echo "  integration-test Run integration tests (requires API_KEY env var or: make integration-test API_KEY=your_key)"
+	@echo "                    Use EXTERNAL=1 to test with PyPI package instead of local: make integration-test API_KEY=your_key EXTERNAL=1"
 	@echo "  lint            Run linting (flake8)"
 	@echo "  format          Format code (black, isort)"
 	@echo "  type-check      Run type checking (mypy)"
@@ -43,24 +44,53 @@ integration-test:
 		echo "Usage: make integration-test API_KEY=your_api_key"; \
 		echo "   or: API_KEY=your_api_key make integration-test"; \
 		echo "   or: export DOME_API_KEY=your_api_key && make integration-test"; \
+		echo ""; \
+		echo "To test with PyPI package instead of local:"; \
+		echo "   make integration-test API_KEY=your_api_key EXTERNAL=1"; \
 		exit 1; \
 	fi
 	@echo "🧪 Running integration tests..."
-	@echo "📦 Ensuring SDK is installed in development mode..."
-	@pip install -e . --quiet 2>/dev/null || { \
-		echo "   Installing package..."; \
-		pip install -e .; \
-	}
-	@echo "✅ SDK ready for testing"
+	@if [ "$(EXTERNAL)" = "1" ]; then \
+		echo "📦 Installing latest version from PyPI..."; \
+		pip uninstall -y dome-api-sdk 2>/dev/null || true; \
+		pip install --upgrade dome-api-sdk || { \
+			echo "❌ Failed to install dome-api-sdk from PyPI"; \
+			exit 1; \
+		}; \
+		INSTALLED_VERSION=$$(pip show dome-api-sdk | grep Version | cut -d' ' -f2); \
+		echo "✅ Installed PyPI package version: $$INSTALLED_VERSION"; \
+		if [ ! -f tests/integration_test.py ]; then \
+			echo "❌ Error: tests/integration_test.py not found in local repository"; \
+			echo "   The integration test file is required to run tests with EXTERNAL=1"; \
+			exit 1; \
+		fi; \
+		echo "🧪 Running integration tests using local test file with PyPI package..."; \
+		TEST_CMD="python3 tests/integration_test.py"; \
+	else \
+		echo "📦 Ensuring SDK is installed in development mode..."; \
+		pip install -e . --quiet 2>/dev/null || { \
+			echo "   Installing package..."; \
+			pip install -e .; \
+		}; \
+		echo "✅ Using local development version"; \
+		TEST_CMD="python3 -m dome_api_sdk.tests.integration_test"; \
+	fi
 	@if [ -n "$(API_KEY)" ]; then \
 		API_KEY_VAL="$(API_KEY)"; \
 	else \
 		API_KEY_VAL="$$DOME_API_KEY"; \
 	fi; \
-	python3 -m dome_api_sdk.tests.integration_test $$API_KEY_VAL || { \
-		echo "⚠️  Module import failed, trying with PYTHONPATH..."; \
-		PYTHONPATH=$$(pwd)/src:$$PYTHONPATH python3 tests/integration_test.py $$API_KEY_VAL; \
-	}
+	if [ "$(EXTERNAL)" = "1" ]; then \
+		python3 tests/integration_test.py "$$API_KEY_VAL" || { \
+			echo "❌ Integration test failed with PyPI package"; \
+			exit 1; \
+		}; \
+	else \
+		$$TEST_CMD "$$API_KEY_VAL" || { \
+			echo "⚠️  Module import failed, trying with PYTHONPATH..."; \
+			PYTHONPATH=$$(pwd)/src:$$PYTHONPATH python3 tests/integration_test.py "$$API_KEY_VAL"; \
+		}; \
+	fi
 
 # Linting and formatting
 lint:
