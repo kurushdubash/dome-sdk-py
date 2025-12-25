@@ -84,7 +84,8 @@ All Polymarket endpoints are accessed through `dome.polymarket.*`:
 | **Markets** | `markets.get_markets()` | Get market data with filtering (slug, tags, status, etc.) | `/polymarket/markets` |
 | **Markets** | `markets.get_orderbooks()` | Get historical orderbook snapshots for an asset | `/polymarket/orderbooks` |
 | **Orders** | `orders.get_orders()` | Get order data with filtering (market, user, time range, etc.) | `/polymarket/orders` |
-| **WebSocket** | `websocket.subscribe()` | Subscribe to real-time order events via WebSocket | `wss://ws.domeapi.io/{api_key}` |
+| **WebSocket** | `websocket.subscribe()` | Subscribe to real-time order events via WebSocket (supports users, condition_ids, market_slugs filters) | `wss://ws.domeapi.io/{api_key}` |
+| **WebSocket** | `websocket.update()` | Update an existing subscription's filters | `wss://ws.domeapi.io/{api_key}` |
 | **WebSocket** | `websocket.unsubscribe()` | Unsubscribe from order events | `wss://ws.domeapi.io/{api_key}` |
 | **WebSocket** | `websocket.get_active_subscriptions()` | Get all active subscriptions | N/A |
 | **Wallet** | `wallet.get_wallet_pnl()` | Get realized profit and loss (PnL) for a wallet | `/polymarket/wallet/pnl/{wallet_address}` |
@@ -107,6 +108,15 @@ Cross-platform market matching endpoints are accessed through `dome.matching_mar
 |--------|-------------|---------------|
 | `get_matching_markets()` | Find equivalent markets across platforms by Polymarket slug or Kalshi ticker | `/matching-markets/sports/` |
 | `get_matching_markets_by_sport()` | Find equivalent markets by sport and date | `/matching-markets/sports/{sport}/` |
+
+#### Crypto Prices Endpoints
+
+Crypto price data endpoints are accessed through `dome.crypto_prices.*`:
+
+| Method | Description | Endpoint Path |
+|--------|-------------|---------------|
+| **Binance** | `binance.get_binance_prices()` | Get historical crypto price data from Binance | `/crypto-prices/binance` |
+| **Chainlink** | `chainlink.get_chainlink_prices()` | Get historical crypto price data from Chainlink | `/crypto-prices/chainlink` |
 
 ---
 
@@ -237,7 +247,7 @@ orders_array = dome.polymarket.orders.get_orders({
 
 Subscribe to real-time Polymarket order data via WebSocket. The SDK automatically handles reconnection with exponential backoff and subscription management.
 
-#### Basic Usage
+#### Basic Usage - Subscribe by Users
 
 ```python
 import asyncio
@@ -266,6 +276,96 @@ async def main():
     await asyncio.sleep(60)
 
     # Unsubscribe when done
+    await ws_client.unsubscribe(subscription_id)
+    await ws_client.disconnect()
+
+asyncio.run(main())
+```
+
+#### Subscribe by Condition IDs
+
+```python
+import asyncio
+from dome_api_sdk import DomeClient, WebSocketOrderEvent
+
+async def main():
+    dome = DomeClient({"api_key": "your-api-key"})
+    ws_client = dome.polymarket.websocket
+
+    def on_order_event(event: WebSocketOrderEvent):
+        print(f"Order for condition: {event.data.condition_id}")
+
+    await ws_client.connect()
+    subscription_id = await ws_client.subscribe(
+        condition_ids=["0x17815081230e3b9c78b098162c33b1ffa68c4ec29c123d3d14989599e0c2e113"],
+        on_event=on_order_event
+    )
+
+    await asyncio.sleep(60)
+    await ws_client.unsubscribe(subscription_id)
+    await ws_client.disconnect()
+
+asyncio.run(main())
+```
+
+#### Subscribe by Market Slugs
+
+```python
+import asyncio
+from dome_api_sdk import DomeClient, WebSocketOrderEvent
+
+async def main():
+    dome = DomeClient({"api_key": "your-api-key"})
+    ws_client = dome.polymarket.websocket
+
+    def on_order_event(event: WebSocketOrderEvent):
+        print(f"Order in market: {event.data.market_slug}")
+
+    await ws_client.connect()
+    subscription_id = await ws_client.subscribe(
+        market_slugs=["btc-updown-15m-1762755300"],
+        on_event=on_order_event
+    )
+
+    await asyncio.sleep(60)
+    await ws_client.unsubscribe(subscription_id)
+    await ws_client.disconnect()
+
+asyncio.run(main())
+```
+
+#### Update Subscription
+
+Update an existing subscription's filters without creating a new subscription:
+
+```python
+import asyncio
+from dome_api_sdk import DomeClient, WebSocketOrderEvent
+
+async def main():
+    dome = DomeClient({"api_key": "your-api-key"})
+    ws_client = dome.polymarket.websocket
+
+    def on_order_event(event: WebSocketOrderEvent):
+        print(f"Order: {event.data.user}")
+
+    await ws_client.connect()
+    
+    # Initial subscription
+    subscription_id = await ws_client.subscribe(
+        users=["0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b"],
+        on_event=on_order_event
+    )
+
+    await asyncio.sleep(10)
+
+    # Update to track different users (keeps same subscription_id)
+    await ws_client.update(
+        subscription_id=subscription_id,
+        users=["0x6031b6eed1c97e853c6e0f03ad3ce3529351f96d"]
+    )
+
+    await asyncio.sleep(60)
     await ws_client.unsubscribe(subscription_id)
     await ws_client.disconnect()
 
@@ -327,11 +427,25 @@ async def main():
         on_event=on_order_event
     )
 
+    # Subscribe by condition IDs
+    sub3 = await ws_client.subscribe(
+        condition_ids=["0x17815081230e3b9c78b098162c33b1ffa68c4ec29c123d3d14989599e0c2e113"],
+        on_event=on_order_event
+    )
+
     # Get all active subscriptions
     active = ws_client.get_active_subscriptions()
     print(f"Active subscriptions: {len(active)}")
     for sub in active:
-        print(f"  - {sub.subscription_id}: {sub.request['filters']['users']}")
+        filters = sub.request['filters']
+        filter_desc = []
+        if filters.get('users'):
+            filter_desc.append(f"users: {len(filters['users'])}")
+        if filters.get('condition_ids'):
+            filter_desc.append(f"condition_ids: {len(filters['condition_ids'])}")
+        if filters.get('market_slugs'):
+            filter_desc.append(f"market_slugs: {len(filters['market_slugs'])}")
+        print(f"  - {sub.subscription_id}: {', '.join(filter_desc)}")
 
     await asyncio.sleep(60)
 
@@ -380,6 +494,8 @@ asyncio.run(main())
 
 #### WebSocket Features
 
+- **Multiple Filter Types**: Subscribe by users, condition_ids, or market_slugs
+- **Update Subscriptions**: Change filters without unsubscribing
 - **Automatic Reconnection**: Exponential backoff up to 10 retries
 - **Subscription Management**: Track and manage all active subscriptions
 - **Event Handling**: Callback-based event processing
@@ -493,6 +609,60 @@ matching_markets_by_sport = dome.matching_markets.get_matching_markets_by_sport(
 print(f"Sport Markets: {len(matching_markets_by_sport.markets)}")
 ```
 
+### Crypto Prices
+
+Get historical crypto price data from Binance or Chainlink:
+
+#### Binance Prices
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+# Get latest price (no time range)
+binance_prices = dome.crypto_prices.binance.get_binance_prices({
+    "currency": "btcusdt"  # Lowercase, no separators
+})
+print(f"Latest BTC/USDT price: {binance_prices.prices[0].value}")
+print(f"Timestamp: {binance_prices.prices[0].timestamp}")
+
+# Get historical prices with time range
+binance_historical = dome.crypto_prices.binance.get_binance_prices({
+    "currency": "btcusdt",
+    "start_time": 1766130000000,  # milliseconds
+    "end_time": 1766131000000,    # milliseconds
+    "limit": 100
+})
+print(f"Historical prices: {binance_historical.total} data points")
+for price in binance_historical.prices[:5]:  # Show first 5
+    print(f"  {price.symbol}: {price.value} at {price.timestamp}")
+```
+
+#### Chainlink Prices
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+# Get latest price (no time range)
+chainlink_prices = dome.crypto_prices.chainlink.get_chainlink_prices({
+    "currency": "eth/usd"  # Slash-separated
+})
+print(f"Latest ETH/USD price: {chainlink_prices.prices[0].value}")
+print(f"Timestamp: {chainlink_prices.prices[0].timestamp}")
+
+# Get historical prices with time range
+chainlink_historical = dome.crypto_prices.chainlink.get_chainlink_prices({
+    "currency": "eth/usd",
+    "start_time": 1766130000000,  # milliseconds
+    "end_time": 1766131000000,    # milliseconds
+    "limit": 100
+})
+print(f"Historical prices: {chainlink_historical.total} data points")
+```
+
 ## Error Handling
 
 The SDK provides comprehensive error handling:
@@ -518,8 +688,15 @@ except ValueError as error:
 The SDK includes a comprehensive integration test that makes live calls to the real API endpoints to verify everything works correctly.
 
 ```bash
-# Run integration tests with your API key
-python -m dome_api_sdk.tests.integration_test YOUR_API_KEY
+# Using Makefile (recommended)
+make integration-test API_KEY=your-api-key
+
+# Or using Python directly
+python tests/integration_test.py your-api-key
+
+# Or set environment variable
+export DOME_API_KEY=your-api-key
+make integration-test
 ```
 
 This smoke test covers all endpoints with various parameter combinations and provides detailed results.

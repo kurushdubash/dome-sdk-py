@@ -77,6 +77,7 @@ class OrdersEndpoints(BaseClient):
             orders.append(
                 Order(
                     token_id=order_data["token_id"],
+                    token_label=order_data.get("token_label", ""),
                     side=order_data["side"],
                     market_slug=order_data["market_slug"],
                     condition_id=order_data["condition_id"],
@@ -88,6 +89,7 @@ class OrdersEndpoints(BaseClient):
                     timestamp=order_data["timestamp"],
                     order_hash=order_data["order_hash"],
                     user=order_data["user"],
+                    taker=order_data.get("taker"),
                 )
             )
 

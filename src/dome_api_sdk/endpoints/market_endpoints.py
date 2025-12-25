@@ -227,6 +227,7 @@ class MarketEndpoints(BaseClient):
                     end_time=market_data["end_time"],
                     completed_time=market_data.get("completed_time"),
                     close_time=market_data.get("close_time"),
+                    game_start_time=market_data.get("game_start_time"),
                     tags=market_data.get("tags", []),
                     volume_1_week=market_data.get("volume_1_week", 0.0),
                     volume_1_month=market_data.get("volume_1_month", 0.0),

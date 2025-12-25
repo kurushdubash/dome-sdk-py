@@ -33,9 +33,13 @@ class BaseClient:
         self, options: Optional[RequestConfig] = None
     ) -> Dict[str, str]:
         """Prepare headers for the request."""
+        # Import version lazily to avoid circular import
+        from . import __version__
+        
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
+            "x-dome-sdk": f"py/{__version__}",
         }
 
         if options and options.get("headers") is not None:

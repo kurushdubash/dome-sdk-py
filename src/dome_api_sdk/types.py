@@ -74,9 +74,15 @@ __all__ = [
     "SubscribeFilters",
     "SubscribeMessage",
     "UnsubscribeMessage",
+    "UpdateMessage",
     "SubscriptionAcknowledgment",
     "WebSocketOrderEvent",
     "ActiveSubscription",
+    # Crypto Prices Types
+    "CryptoPrice",
+    "CryptoPricesResponse",
+    "GetBinanceCryptoPricesParams",
+    "GetChainlinkCryptoPricesParams",
 ]
 
 # Type aliases
@@ -317,6 +323,7 @@ class Order:
 
     Attributes:
         token_id: Token ID
+        token_label: Human readable label for this outcome (yes/no etc)
         side: Order side (BUY or SELL)
         market_slug: Market slug
         condition_id: Condition ID
@@ -327,10 +334,12 @@ class Order:
         title: Market title
         timestamp: Timestamp
         order_hash: Order hash
-        user: User address
+        user: User address (maker)
+        taker: Taker address that was part of this trade (optional, may be CTF exchange)
     """
 
     token_id: str
+    token_label: str
     side: Literal["BUY", "SELL"]
     market_slug: str
     condition_id: str
@@ -344,6 +353,7 @@ class Order:
     timestamp: int
     order_hash: str
     user: str
+    taker: Optional[str]
 
 
 @dataclass(frozen=True)
@@ -623,6 +633,7 @@ class Market:
         end_time: Unix timestamp in seconds when the market ends
         completed_time: Unix timestamp in seconds when the market was completed (nullable)
         close_time: Unix timestamp in seconds when the market was closed (nullable)
+        game_start_time: Datetime string in UTC format (YYYY-MM-DD HH:MM:SS.000) for when the game/event starts (nullable, only present for sports markets)
         tags: List of tags
         volume_1_week: Trading volume in USD for the past week
         volume_1_month: Trading volume in USD for the past month
@@ -643,6 +654,7 @@ class Market:
     end_time: int
     completed_time: Optional[int]
     close_time: Optional[int]
+    game_start_time: Optional[str]
     tags: List[str]
     volume_1_week: float
     volume_1_month: float
@@ -930,14 +942,18 @@ class GetKalshiOrderbooksParams(TypedDict, total=False):
 # ===== WebSocket Types =====
 
 
-class SubscribeFilters(TypedDict):
+class SubscribeFilters(TypedDict, total=False):
     """Filters for WebSocket subscription.
 
     Attributes:
         users: Array of wallet addresses to track
+        condition_ids: Array of condition IDs to track
+        market_slugs: Array of market slugs to track
     """
 
-    users: List[str]
+    users: Optional[List[str]]
+    condition_ids: Optional[List[str]]
+    market_slugs: Optional[List[str]]
 
 
 class SubscribeMessage(TypedDict):
@@ -970,6 +986,26 @@ class UnsubscribeMessage(TypedDict):
     action: Literal["unsubscribe"]
     version: int
     subscription_id: str
+
+
+class UpdateMessage(TypedDict):
+    """WebSocket update subscription message.
+
+    Attributes:
+        action: Must be "update"
+        subscription_id: The subscription ID to update
+        platform: Must be "polymarket"
+        version: Currently 1
+        type: Must be "orders"
+        filters: New subscription filters
+    """
+
+    action: Literal["update"]
+    subscription_id: str
+    platform: Literal["polymarket"]
+    version: int
+    type: Literal["orders"]
+    filters: SubscribeFilters
 
 
 @dataclass(frozen=True)
@@ -1011,3 +1047,72 @@ class ActiveSubscription:
 
     subscription_id: str
     request: SubscribeMessage
+
+
+# ===== Crypto Prices Types =====
+
+
+@dataclass(frozen=True)
+class CryptoPrice:
+    """Crypto price data point.
+
+    Attributes:
+        symbol: The currency pair symbol
+        value: The price value (can be string or number)
+        timestamp: Unix timestamp in milliseconds when the price was recorded
+    """
+
+    symbol: str
+    value: Union[str, float]
+    timestamp: int
+
+
+@dataclass(frozen=True)
+class CryptoPricesResponse:
+    """Response from the crypto prices endpoint.
+
+    Attributes:
+        prices: Array of crypto price data points
+        pagination_key: Pagination key (base64-encoded) to fetch the next page (optional)
+        total: Total number of prices returned in this response
+    """
+
+    prices: List[CryptoPrice]
+    pagination_key: Optional[str]
+    total: int
+
+
+class GetBinanceCryptoPricesParams(TypedDict, total=False):
+    """Parameters for getting Binance crypto prices.
+
+    Attributes:
+        currency: The currency pair symbol (required). Must be lowercase alphanumeric with no separators (e.g., btcusdt, ethusdt)
+        start_time: Start time in Unix timestamp (milliseconds) (optional)
+        end_time: End time in Unix timestamp (milliseconds) (optional)
+        limit: Maximum number of prices to return (default: 100, max: 100) (optional)
+        pagination_key: Pagination key to fetch the next page (optional)
+    """
+
+    currency: str
+    start_time: Optional[int]
+    end_time: Optional[int]
+    limit: Optional[int]
+    pagination_key: Optional[str]
+
+
+class GetChainlinkCryptoPricesParams(TypedDict, total=False):
+    """Parameters for getting Chainlink crypto prices.
+
+    Attributes:
+        currency: The currency pair symbol (required). Must be slash-separated (e.g., btc/usd, eth/usd)
+        start_time: Start time in Unix timestamp (milliseconds) (optional)
+        end_time: End time in Unix timestamp (milliseconds) (optional)
+        limit: Maximum number of prices to return (default: 100, max: 100) (optional)
+        pagination_key: Pagination key to fetch the next page (optional)
+    """
+
+    currency: str
+    start_time: Optional[int]
+    end_time: Optional[int]
+    limit: Optional[int]
+    pagination_key: Optional[str]

@@ -2,7 +2,12 @@
 
 from typing import Optional
 
-from .endpoints import KalshiClient, MatchingMarketsEndpoints, PolymarketClient
+from .endpoints import (
+    CryptoPricesClient,
+    KalshiClient,
+    MatchingMarketsEndpoints,
+    PolymarketClient,
+)
 from .types import DomeSDKConfig
 
 __all__ = ["DomeClient"]
@@ -42,3 +47,4 @@ class DomeClient:
         self.polymarket = PolymarketClient(config)
         self.kalshi = KalshiClient(config)
         self.matching_markets = MatchingMarketsEndpoints(config)
+        self.crypto_prices = CryptoPricesClient(config)

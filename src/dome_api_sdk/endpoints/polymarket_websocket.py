@@ -13,9 +13,11 @@ from websockets.exceptions import ConnectionClosed
 from ..types import (
     ActiveSubscription,
     Order,
+    SubscribeFilters,
     SubscribeMessage,
     SubscriptionAcknowledgment,
     UnsubscribeMessage,
+    UpdateMessage,
     WebSocketOrderEvent,
 )
 
@@ -43,18 +45,34 @@ class PolymarketWebSocketClient:
             ws_client = dome.polymarket.websocket
 
             # Subscribe to orders for specific users
-            await ws_client.subscribe(
+            subscription_id = await ws_client.subscribe(
                 users=["0x6031b6eed1c97e853c6e0f03ad3ce3529351f96d"],
                 on_event=on_order_event
             )
+
+            # Or subscribe by condition IDs
+            # subscription_id = await ws_client.subscribe(
+            #     condition_ids=["0x17815081230e3b9c78b098162c33b1ffa68c4ec29c123d3d14989599e0c2e113"],
+            #     on_event=on_order_event
+            # )
+
+            # Or subscribe by market slugs
+            # subscription_id = await ws_client.subscribe(
+            #     market_slugs=["btc-updown-15m-1762755300"],
+            #     on_event=on_order_event
+            # )
+
+            # Update subscription filters
+            # await ws_client.update(
+            #     subscription_id=subscription_id,
+            #     users=["0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b"]
+            # )
 
             # Keep running
             await asyncio.sleep(60)
 
             # Unsubscribe
-            subscriptions = ws_client.get_active_subscriptions()
-            for sub in subscriptions:
-                await ws_client.unsubscribe(sub.subscription_id)
+            await ws_client.unsubscribe(subscription_id)
 
         asyncio.run(main())
         ```
@@ -98,7 +116,14 @@ class PolymarketWebSocketClient:
             return
 
         try:
-            self._websocket = await websockets.connect(self._ws_url)
+            # Import version lazily to avoid circular import
+            from .. import __version__
+            additional_headers = {
+                "x-dome-sdk": f"py/{__version__}",
+            }
+            self._websocket = await websockets.connect(
+                self._ws_url, additional_headers=additional_headers
+            )
             self._connected = True
             self._reconnect_attempts = 0
             self._base_reconnect_delay = 1.0
@@ -134,13 +159,17 @@ class PolymarketWebSocketClient:
 
     async def subscribe(
         self,
-        users: List[str],
+        users: Optional[List[str]] = None,
+        condition_ids: Optional[List[str]] = None,
+        market_slugs: Optional[List[str]] = None,
         on_event: Optional[Callable[[WebSocketOrderEvent], None]] = None,
     ) -> str:
-        """Subscribe to order events for specific users.
+        """Subscribe to order events with various filter options.
 
         Args:
-            users: List of wallet addresses to track
+            users: Optional list of wallet addresses to track
+            condition_ids: Optional list of condition IDs to track
+            market_slugs: Optional list of market slugs to track
             on_event: Optional callback function to handle order events.
                      If not provided, events will be queued and can be retrieved.
 
@@ -148,8 +177,11 @@ class PolymarketWebSocketClient:
             The subscription ID assigned by the server
 
         Raises:
-            ValueError: If the request fails
+            ValueError: If the request fails or no filters provided
             RuntimeError: If not connected
+
+        Note:
+            At least one filter type (users, condition_ids, or market_slugs) must be provided.
         """
         if not self._connected or not self._websocket:
             await self.connect()
@@ -157,14 +189,26 @@ class PolymarketWebSocketClient:
         if on_event:
             self._on_event = on_event
 
+        # Build filters - at least one must be provided
+        filters: SubscribeFilters = {}
+        if users:
+            filters["users"] = users
+        if condition_ids:
+            filters["condition_ids"] = condition_ids
+        if market_slugs:
+            filters["market_slugs"] = market_slugs
+
+        if not filters:
+            raise ValueError(
+                "At least one filter must be provided: users, condition_ids, or market_slugs"
+            )
+
         subscribe_msg: SubscribeMessage = {
             "action": "subscribe",
             "platform": "polymarket",
             "version": 1,
             "type": "orders",
-            "filters": {
-                "users": users,
-            },
+            "filters": filters,
         }
 
         # Store as pending until we get ack
@@ -174,7 +218,14 @@ class PolymarketWebSocketClient:
 
         try:
             await self._websocket.send(json.dumps(subscribe_msg))
-            logger.info(f"Sent subscription request for users: {users}")
+            filter_desc = []
+            if users:
+                filter_desc.append(f"users: {len(users)}")
+            if condition_ids:
+                filter_desc.append(f"condition_ids: {len(condition_ids)}")
+            if market_slugs:
+                filter_desc.append(f"market_slugs: {len(market_slugs)}")
+            logger.info(f"Sent subscription request with filters: {', '.join(filter_desc)}")
 
             # Wait for acknowledgment (with timeout)
             subscription_id = await self._wait_for_subscription_ack(
@@ -208,6 +259,87 @@ class PolymarketWebSocketClient:
             if request_id in self._pending_subscriptions:
                 del self._pending_subscriptions[request_id]
             raise ValueError(f"Failed to subscribe: {e}")
+
+    async def update(
+        self,
+        subscription_id: str,
+        users: Optional[List[str]] = None,
+        condition_ids: Optional[List[str]] = None,
+        market_slugs: Optional[List[str]] = None,
+    ) -> None:
+        """Update an existing subscription's filters without creating a new subscription.
+
+        Args:
+            subscription_id: The subscription ID to update
+            users: Optional list of wallet addresses to track
+            condition_ids: Optional list of condition IDs to track
+            market_slugs: Optional list of market slugs to track
+
+        Raises:
+            ValueError: If the subscription ID is not found, request fails, or no filters provided
+            RuntimeError: If not connected
+
+        Note:
+            At least one filter type (users, condition_ids, or market_slugs) must be provided.
+        """
+        if not self._connected or not self._websocket:
+            raise RuntimeError("Not connected to WebSocket server")
+
+        if subscription_id not in self._active_subscriptions:
+            raise ValueError(f"Subscription ID not found: {subscription_id}")
+
+        # Build filters - at least one must be provided
+        filters: SubscribeFilters = {}
+        if users:
+            filters["users"] = users
+        if condition_ids:
+            filters["condition_ids"] = condition_ids
+        if market_slugs:
+            filters["market_slugs"] = market_slugs
+
+        if not filters:
+            raise ValueError(
+                "At least one filter must be provided: users, condition_ids, or market_slugs"
+            )
+
+        update_msg: UpdateMessage = {
+            "action": "update",
+            "subscription_id": subscription_id,
+            "platform": "polymarket",
+            "version": 1,
+            "type": "orders",
+            "filters": filters,
+        }
+
+        try:
+            await self._websocket.send(json.dumps(update_msg))
+            filter_desc = []
+            if users:
+                filter_desc.append(f"users: {len(users)}")
+            if condition_ids:
+                filter_desc.append(f"condition_ids: {len(condition_ids)}")
+            if market_slugs:
+                filter_desc.append(f"market_slugs: {len(market_slugs)}")
+            logger.info(
+                f"Sent update request for subscription {subscription_id} with filters: {', '.join(filter_desc)}"
+            )
+
+            # Update the stored subscription request
+            old_request = self._active_subscriptions[subscription_id].request
+            updated_request: SubscribeMessage = {
+                "action": "subscribe",
+                "platform": "polymarket",
+                "version": 1,
+                "type": "orders",
+                "filters": filters,
+            }
+            self._active_subscriptions[subscription_id] = ActiveSubscription(
+                subscription_id=subscription_id,
+                request=updated_request,
+            )
+
+        except Exception as e:
+            raise ValueError(f"Failed to update subscription: {e}")
 
     async def unsubscribe(self, subscription_id: str) -> None:
         """Unsubscribe from order events.
@@ -304,6 +436,7 @@ class PolymarketWebSocketClient:
             if subscription_id and order_data:
                 order = Order(
                     token_id=order_data["token_id"],
+                    token_label=order_data.get("token_label", ""),
                     side=order_data["side"],
                     market_slug=order_data["market_slug"],
                     condition_id=order_data["condition_id"],
@@ -315,6 +448,7 @@ class PolymarketWebSocketClient:
                     timestamp=order_data["timestamp"],
                     order_hash=order_data["order_hash"],
                     user=order_data["user"],
+                    taker=order_data.get("taker"),
                 )
 
                 event = WebSocketOrderEvent(
@@ -368,9 +502,12 @@ class PolymarketWebSocketClient:
 
         for sub in subscriptions_to_resubscribe:
             try:
-                # Re-subscribe with the same request
+                # Re-subscribe with the same request filters
+                filters = sub.request["filters"]
                 new_subscription_id = await self.subscribe(
-                    users=sub.request["filters"]["users"],
+                    users=filters.get("users"),
+                    condition_ids=filters.get("condition_ids"),
+                    market_slugs=filters.get("market_slugs"),
                     on_event=self._on_event,
                 )
                 logger.info(
@@ -378,7 +515,7 @@ class PolymarketWebSocketClient:
                 )
             except Exception as e:
                 logger.error(
-                    f"Failed to re-subscribe for users {sub.request['filters']['users']}: {e}"
+                    f"Failed to re-subscribe for filters {filters}: {e}"
                 )
 
     async def _handle_disconnection(self) -> None:

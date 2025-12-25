@@ -76,7 +76,7 @@ from .types import (
     WebSocketOrderEvent,
 )
 
-__version__ = "0.1.1"
+__version__ = "0.1.5"
 __author__ = "Kurush Dubash, Kunal Roy"
 __email__ = "kurush@domeapi.com, kunal@domeapi.com"
 __license__ = "MIT"
@@ -139,6 +139,11 @@ __all__ = [
     "KalshiOrderbookPagination",
     "KalshiOrderbooksResponse",
     "GetKalshiOrderbooksParams",
+    # Crypto Prices Types
+    "CryptoPrice",
+    "CryptoPricesResponse",
+    "GetBinanceCryptoPricesParams",
+    "GetChainlinkCryptoPricesParams",
     # Error Types
     "ApiError",
     "ValidationError",
@@ -148,6 +153,7 @@ __all__ = [
     "SubscribeFilters",
     "SubscribeMessage",
     "UnsubscribeMessage",
+    "UpdateMessage",
     "SubscriptionAcknowledgment",
     "WebSocketOrderEvent",
     "ActiveSubscription",
