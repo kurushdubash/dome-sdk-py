@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dome-api-sdk"
-version = "0.1.5"
+version = "0.1.6"
 description = "The Dome SDK - A comprehensive Python SDK for Dome API"
 readme = "README.md"
 license = { file = "LICENSE" }
