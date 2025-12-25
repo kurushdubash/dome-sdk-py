@@ -21,4 +21,3 @@ class CryptoPricesClient:
         crypto_prices_endpoints = CryptoPricesEndpoints(config)
         self.binance = crypto_prices_endpoints
         self.chainlink = crypto_prices_endpoints
-

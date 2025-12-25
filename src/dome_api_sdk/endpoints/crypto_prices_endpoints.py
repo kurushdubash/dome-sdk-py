@@ -151,4 +151,3 @@ class CryptoPricesEndpoints(BaseClient):
             pagination_key=response_data.get("pagination_key"),
             total=response_data.get("total", len(prices)),
         )
-

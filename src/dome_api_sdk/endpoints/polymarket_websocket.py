@@ -118,6 +118,7 @@ class PolymarketWebSocketClient:
         try:
             # Import version lazily to avoid circular import
             from .. import __version__
+
             additional_headers = {
                 "x-dome-sdk": f"py/{__version__}",
             }
@@ -225,7 +226,9 @@ class PolymarketWebSocketClient:
                 filter_desc.append(f"condition_ids: {len(condition_ids)}")
             if market_slugs:
                 filter_desc.append(f"market_slugs: {len(market_slugs)}")
-            logger.info(f"Sent subscription request with filters: {', '.join(filter_desc)}")
+            logger.info(
+                f"Sent subscription request with filters: {', '.join(filter_desc)}"
+            )
 
             # Wait for acknowledgment (with timeout)
             subscription_id = await self._wait_for_subscription_ack(
@@ -514,9 +517,7 @@ class PolymarketWebSocketClient:
                     f"Re-subscribed: old_id={sub.subscription_id}, new_id={new_subscription_id}"
                 )
             except Exception as e:
-                logger.error(
-                    f"Failed to re-subscribe for filters {filters}: {e}"
-                )
+                logger.error(f"Failed to re-subscribe for filters {filters}: {e}")
 
     async def _handle_disconnection(self) -> None:
         """Handle disconnection and attempt to reconnect."""

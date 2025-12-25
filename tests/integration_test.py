@@ -41,7 +41,9 @@ async def run_integration_test(api_key: str) -> None:
     ) -> None:
         try:
             print(f"📋 Testing: {test_name}")
-            result = await test_fn() if asyncio.iscoroutinefunction(test_fn) else test_fn()
+            result = (
+                await test_fn() if asyncio.iscoroutinefunction(test_fn) else test_fn()
+            )
 
             # Validate that response has values
             if validate_response:
@@ -63,8 +65,12 @@ async def run_integration_test(api_key: str) -> None:
             test_results.errors.append(f"{test_name}: {error_message}")
 
     # Test data - using provided base values
-    test_token_id = "56369772478534954338683665819559528414197495274302917800610633957542171787417"
-    test_condition_id = "0x4567b275e6b667a6217f5cb4f06a797d3a1eaf1d0281fb5bc8c75e2046ae7e57"
+    test_token_id = (
+        "56369772478534954338683665819559528414197495274302917800610633957542171787417"
+    )
+    test_condition_id = (
+        "0x4567b275e6b667a6217f5cb4f06a797d3a1eaf1d0281fb5bc8c75e2046ae7e57"
+    )
     test_wallet_address = "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b"
     test_market_slug = "bitcoin-up-or-down-july-25-8pm-et"
     test_start_time = 1760470000000  # milliseconds
@@ -120,7 +126,9 @@ async def run_integration_test(api_key: str) -> None:
     )
 
     def validate_candlesticks(result):
-        if not hasattr(result, "candlesticks") or not isinstance(result.candlesticks, list):
+        if not hasattr(result, "candlesticks") or not isinstance(
+            result.candlesticks, list
+        ):
             raise ValueError("Response must have candlesticks array")
 
     await run_test(
@@ -242,7 +250,9 @@ async def run_integration_test(api_key: str) -> None:
     def validate_wallet_pnl(result):
         if not isinstance(result.granularity, str):
             raise ValueError("Response must have granularity as string")
-        if not hasattr(result, "pnl_over_time") or not isinstance(result.pnl_over_time, list):
+        if not hasattr(result, "pnl_over_time") or not isinstance(
+            result.pnl_over_time, list
+        ):
             raise ValueError("Response must have pnl_over_time array")
         if not isinstance(result.wallet_address, str):
             raise ValueError("Response must have wallet_address as string")
@@ -263,7 +273,9 @@ async def run_integration_test(api_key: str) -> None:
     def validate_wallet_pnl_all(result):
         if not isinstance(result.granularity, str):
             raise ValueError("Response must have granularity as string")
-        if not hasattr(result, "pnl_over_time") or not isinstance(result.pnl_over_time, list):
+        if not hasattr(result, "pnl_over_time") or not isinstance(
+            result.pnl_over_time, list
+        ):
             raise ValueError("Response must have pnl_over_time array")
 
     await run_test(
@@ -433,7 +445,9 @@ async def run_integration_test(api_key: str) -> None:
             # Disconnect
             await ws.disconnect()
 
-    await run_test("Polymarket: WebSocket - Subscribe and receive order events", test_websocket)
+    await run_test(
+        "Polymarket: WebSocket - Subscribe and receive order events", test_websocket
+    )
 
     # ===== KALSHI ENDPOINTS =====
     print("🏈 Testing Kalshi Endpoints...\n")
@@ -482,7 +496,9 @@ async def run_integration_test(api_key: str) -> None:
             if not isinstance(market.market_ticker, str) or not market.market_ticker:
                 raise ValueError("market.market_ticker must be a non-empty string")
             if "." not in market.market_ticker:
-                raise ValueError("Market ticker should support special characters like '.'")
+                raise ValueError(
+                    "Market ticker should support special characters like '.'"
+                )
 
     await run_test(
         "Kalshi: Get Markets (by market ticker with special characters)",
@@ -719,7 +735,9 @@ async def run_integration_test(api_key: str) -> None:
         print("   - Network issues")
         print("   - API changes")
         print("")
-        print("💡 Try running the test again or check the specific error messages above.")
+        print(
+            "💡 Try running the test again or check the specific error messages above."
+        )
 
     # Exit with appropriate code
     sys.exit(1 if test_results.failed > 0 else 0)

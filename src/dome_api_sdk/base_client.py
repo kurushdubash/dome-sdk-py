@@ -35,7 +35,7 @@ class BaseClient:
         """Prepare headers for the request."""
         # Import version lazily to avoid circular import
         from . import __version__
-        
+
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
