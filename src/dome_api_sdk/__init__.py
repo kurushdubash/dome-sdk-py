@@ -17,6 +17,40 @@ Example:
 
     asyncio.run(main())
     ```
+
+For Polymarket trading with external wallets (Privy, MetaMask, etc.):
+    ```python
+    import asyncio
+    from dome_api_sdk import PolymarketRouter, create_privy_signer
+
+    async def main():
+        router = PolymarketRouter({
+            "api_key": "your-dome-api-key",
+            "privy": {
+                "app_id": "your-privy-app-id",
+                "app_secret": "your-privy-app-secret",
+                "authorization_key": "your-privy-auth-key",
+            },
+        })
+
+        # Link user to Polymarket
+        credentials = await router.link_user({
+            "user_id": "user-123",
+            "signer": signer,
+        })
+
+        # Place orders
+        result = await router.place_order({
+            "user_id": "user-123",
+            "market_id": "token-id",
+            "side": "buy",
+            "size": 10,
+            "price": 0.65,
+            "signer": signer,
+        })
+
+    asyncio.run(main())
+    ```
 """
 
 from .client import DomeClient
@@ -25,14 +59,20 @@ from .types import (
     Activity,
     ActivityPagination,
     ActivityResponse,
+    AllowanceStatus,
     ApiError,
     CandlestickAskBid,
     CandlestickData,
     CandlestickPrice,
     CandlesticksResponse,
+    CryptoPrice,
+    CryptoPricesResponse,
     DomeSDKConfig,
+    Eip712Payload,
     GetActivityParams,
+    GetBinanceCryptoPricesParams,
     GetCandlesticksParams,
+    GetChainlinkCryptoPricesParams,
     GetKalshiMarketsParams,
     GetKalshiOrderbooksParams,
     GetMarketPriceParams,
@@ -50,6 +90,7 @@ from .types import (
     KalshiOrderbookPagination,
     KalshiOrderbookSnapshot,
     KalshiOrderbooksResponse,
+    LinkPolymarketUserParams,
     Market,
     MarketData,
     MarketPriceResponse,
@@ -63,17 +104,44 @@ from .types import (
     OrderbooksResponse,
     OrdersResponse,
     Pagination,
+    PlaceOrderParams,
     PnLDataPoint,
+    PolymarketCredentials,
     PolymarketMarket,
+    PolymarketOrderType,
+    PolymarketRouterConfig,
+    PrivyRouterConfig,
     RequestConfig,
+    SafeLinkResult,
+    ServerPlaceOrderError,
+    ServerPlaceOrderResult,
+    SignedPolymarketOrder,
     SubscribeFilters,
     SubscribeMessage,
     SubscriptionAcknowledgment,
     TokenMetadata,
     UnsubscribeMessage,
+    UpdateMessage,
     ValidationError,
     WalletPnLResponse,
+    WalletType,
     WebSocketOrderEvent,
+)
+
+# Router and utilities
+from .router import PolymarketRouter
+from .utils import (
+    PrivyClient,
+    RouterSigner,
+    create_privy_client,
+    create_privy_signer,
+    create_privy_signer_from_env,
+    check_privy_wallet_allowances,
+    set_privy_wallet_allowances,
+    POLYGON_ADDRESSES,
+    check_all_allowances,
+    set_all_allowances,
+    get_polygon_provider,
 )
 
 __version__ = "0.1.5"
@@ -157,6 +225,34 @@ __all__ = [
     "SubscriptionAcknowledgment",
     "WebSocketOrderEvent",
     "ActiveSubscription",
+    # Router Types
+    "WalletType",
+    "PolymarketOrderType",
+    "Eip712Payload",
+    "PrivyRouterConfig",
+    "PolymarketRouterConfig",
+    "LinkPolymarketUserParams",
+    "PlaceOrderParams",
+    "PolymarketCredentials",
+    "SafeLinkResult",
+    "AllowanceStatus",
+    "SignedPolymarketOrder",
+    "ServerPlaceOrderResult",
+    "ServerPlaceOrderError",
+    # Router
+    "PolymarketRouter",
+    # Utilities
+    "PrivyClient",
+    "RouterSigner",
+    "create_privy_client",
+    "create_privy_signer",
+    "create_privy_signer_from_env",
+    "check_privy_wallet_allowances",
+    "set_privy_wallet_allowances",
+    "POLYGON_ADDRESSES",
+    "check_all_allowances",
+    "set_all_allowances",
+    "get_polygon_provider",
     # Package info
     "__version__",
 ]

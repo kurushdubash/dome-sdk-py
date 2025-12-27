@@ -83,6 +83,20 @@ __all__ = [
     "CryptoPricesResponse",
     "GetBinanceCryptoPricesParams",
     "GetChainlinkCryptoPricesParams",
+    # Router Types
+    "WalletType",
+    "PolymarketOrderType",
+    "Eip712Payload",
+    "PrivyRouterConfig",
+    "PolymarketRouterConfig",
+    "LinkPolymarketUserParams",
+    "PlaceOrderParams",
+    "PolymarketCredentials",
+    "SafeLinkResult",
+    "AllowanceStatus",
+    "SignedPolymarketOrder",
+    "ServerPlaceOrderResult",
+    "ServerPlaceOrderError",
 ]
 
 # Type aliases
@@ -1116,3 +1130,282 @@ class GetChainlinkCryptoPricesParams(TypedDict, total=False):
     end_time: Optional[int]
     limit: Optional[int]
     pagination_key: Optional[str]
+
+
+# ===== Router Types (Wallet-Agnostic) =====
+
+# Type aliases for wallet types
+WalletType = Literal["eoa", "safe"]
+"""Wallet type for Polymarket trading.
+
+- 'eoa': Standard Externally Owned Account (Privy embedded wallets, direct wallet signing)
+  - Uses signatureType = 0
+  - Signer address is the funder address
+  - Funds (USDC) are held directly in the EOA
+
+- 'safe': Safe Smart Account (external wallets like MetaMask, Rabby, etc.)
+  - Uses signatureType = 2 (browser wallet with Safe)
+  - Signer is the EOA, funder is the derived Safe address
+  - Funds (USDC) are held in the Safe wallet
+  - Requires Safe deployment before trading
+"""
+
+# Order type for Polymarket CLOB
+PolymarketOrderType = Literal["GTC", "GTD", "FOK", "FAK"]
+"""Order type for Polymarket CLOB.
+
+- 'GTC': Good Till Cancelled - order stays on book until filled or cancelled
+- 'GTD': Good Till Date - order expires at specified time
+- 'FOK': Fill Or Kill - order must fill completely immediately or cancel entirely
+- 'FAK': Fill And Kill - fills as much as possible immediately, cancels rest
+
+For copy trading, use 'FOK' or 'FAK' for instant confirmation of fill status.
+"""
+
+
+class Eip712Payload(TypedDict):
+    """EIP-712 payload shape used by Dome router / Polymarket.
+
+    This is the structure that needs to be signed by the user's wallet.
+
+    Attributes:
+        domain: Domain information for EIP-712 signing
+        types: Types definition for the structured data
+        primaryType: Primary type being signed
+        message: The actual message data to be signed
+    """
+
+    domain: Dict[str, any]
+    types: Dict[str, List[Dict[str, str]]]
+    primaryType: str
+    message: Dict[str, any]
+
+
+class PrivyRouterConfig(TypedDict):
+    """Privy configuration for automatic signer creation.
+
+    Attributes:
+        app_id: Privy App ID
+        app_secret: Privy App Secret
+        authorization_key: Privy Authorization Private Key (wallet-auth:...)
+    """
+
+    app_id: str
+    app_secret: str
+    authorization_key: str
+
+
+class PolymarketRouterConfig(TypedDict, total=False):
+    """Configuration for Polymarket router helper.
+
+    The router automatically uses Dome's builder server
+    (https://builder-signer.domeapi.io/builder-signer/sign)
+    for improved order execution, routing, and reduced MEV exposure.
+
+    Orders are placed via Dome API (https://api.domeapi.io/v1) which requires an API key.
+
+    Attributes:
+        api_key: Dome API key for order placement (required for place_order)
+        chain_id: Chain ID (137 for Polygon mainnet, 80002 for Amoy testnet)
+        clob_endpoint: Polymarket CLOB endpoint (defaults to https://clob.polymarket.com)
+        relayer_endpoint: Polymarket Relayer endpoint (defaults to https://relayer-v2.polymarket.com)
+        rpc_url: Polygon RPC URL (defaults to https://polygon-rpc.com)
+        privy: Optional Privy configuration for automatic signer creation
+    """
+
+    api_key: Optional[str]
+    chain_id: Optional[int]
+    clob_endpoint: Optional[str]
+    relayer_endpoint: Optional[str]
+    rpc_url: Optional[str]
+    privy: Optional[PrivyRouterConfig]
+
+
+class LinkPolymarketUserParams(TypedDict, total=False):
+    """One-time setup to link a user to Polymarket via Dome router.
+
+    This establishes the connection between your user and their Polymarket account.
+
+    Attributes:
+        user_id: Customer's internal user ID in your system (required)
+        signer: Wallet/signing implementation (Privy, MetaMask, etc.) - must be a RouterSigner
+        wallet_type: Type of wallet being used (default: 'eoa')
+        auto_deploy_safe: Whether to auto-deploy Safe if not already deployed (default: True)
+        privy_wallet_id: Optional Privy wallet ID (required for auto-setting allowances with Privy)
+        auto_set_allowances: Whether to automatically set token allowances if missing (default: True)
+        sponsor_gas: Use Privy gas sponsorship for allowance transactions (default: False)
+    """
+
+    user_id: str
+    signer: any  # RouterSigner - can't type hint Protocol here
+    wallet_type: Optional[WalletType]
+    auto_deploy_safe: Optional[bool]
+    privy_wallet_id: Optional[str]
+    auto_set_allowances: Optional[bool]
+    sponsor_gas: Optional[bool]
+
+
+class PlaceOrderParams(TypedDict, total=False):
+    """High-level order interface for routing via Dome backend.
+
+    Abstracts away Polymarket CLOB specifics.
+
+    Attributes:
+        user_id: Your internal user ID (required)
+        market_id: Market identifier (platform-specific) (required)
+        side: Order side ('buy' or 'sell') (required)
+        size: Order size (normalized) (required)
+        price: Order price (0-1 for Polymarket) (required)
+        signer: Wallet/signing implementation (required for signing orders)
+        wallet_type: Type of wallet being used (default: 'eoa')
+        funder_address: Safe smart account address that holds user's funds (required for 'safe' wallet)
+        privy_wallet_id: Optional Privy wallet ID (if using Privy, avoids need for signer)
+        wallet_address: Optional wallet address (if using Privy, avoids need for signer)
+        neg_risk: Whether the market uses neg risk (default: False)
+        order_type: Order type (default: 'GTC')
+    """
+
+    user_id: str
+    market_id: str
+    side: Literal["buy", "sell"]
+    size: float
+    price: float
+    signer: Optional[any]  # RouterSigner
+    wallet_type: Optional[WalletType]
+    funder_address: Optional[str]
+    privy_wallet_id: Optional[str]
+    wallet_address: Optional[str]
+    neg_risk: Optional[bool]
+    order_type: Optional[PolymarketOrderType]
+
+
+@dataclass
+class PolymarketCredentials:
+    """Polymarket CLOB credentials.
+
+    Attributes:
+        api_key: API key for CLOB authentication
+        api_secret: API secret for CLOB authentication
+        api_passphrase: API passphrase for CLOB authentication
+    """
+
+    api_key: str
+    api_secret: str
+    api_passphrase: str
+
+
+@dataclass
+class SafeLinkResult:
+    """Result of linking a user with a Safe wallet.
+
+    Attributes:
+        credentials: Polymarket API credentials
+        safe_address: Safe wallet address (funder for orders)
+        signer_address: EOA wallet address (signer for orders)
+        safe_deployed: Whether Safe was deployed during this call
+        allowances_set: Number of allowances that were set
+    """
+
+    credentials: PolymarketCredentials
+    safe_address: str
+    signer_address: str
+    safe_deployed: bool
+    allowances_set: int
+
+
+@dataclass
+class AllowanceStatus:
+    """Status of token allowances for Polymarket trading.
+
+    Attributes:
+        all_set: Whether all required allowances are set
+        usdc_ctf_exchange: USDC allowance for CTF Exchange
+        usdc_neg_risk_ctf_exchange: USDC allowance for Neg Risk CTF Exchange
+        usdc_neg_risk_adapter: USDC allowance for Neg Risk Adapter
+        ctf_ctf_exchange: CTF allowance for CTF Exchange
+        ctf_neg_risk_ctf_exchange: CTF allowance for Neg Risk CTF Exchange
+        ctf_neg_risk_adapter: CTF allowance for Neg Risk Adapter
+    """
+
+    all_set: bool
+    usdc_ctf_exchange: bool
+    usdc_neg_risk_ctf_exchange: bool
+    usdc_neg_risk_adapter: bool
+    ctf_ctf_exchange: bool
+    ctf_neg_risk_ctf_exchange: bool
+    ctf_neg_risk_adapter: bool
+
+
+@dataclass
+class SignedPolymarketOrder:
+    """Signed order structure for Polymarket CLOB.
+
+    This is the order that has been signed by the user's wallet.
+
+    Attributes:
+        salt: Random salt for the order
+        maker: Maker address
+        signer: Signer address
+        taker: Taker address
+        token_id: Token ID for the market
+        maker_amount: Amount the maker is offering
+        taker_amount: Amount the maker wants
+        expiration: Order expiration timestamp
+        nonce: Order nonce
+        fee_rate_bps: Fee rate in basis points
+        side: Order side (BUY or SELL)
+        signature_type: Type of signature (0 for EOA, 2 for Safe)
+        signature: The signature
+    """
+
+    salt: str
+    maker: str
+    signer: str
+    taker: str
+    token_id: str
+    maker_amount: str
+    taker_amount: str
+    expiration: str
+    nonce: str
+    fee_rate_bps: str
+    side: Literal["BUY", "SELL"]
+    signature_type: int
+    signature: str
+
+
+@dataclass
+class ServerPlaceOrderResult:
+    """Successful order placement result.
+
+    Attributes:
+        success: Whether the order was placed successfully
+        order_id: Order ID from Polymarket
+        client_order_id: Client-provided order ID
+        status: Order status
+        order_hash: Hash of the order
+        transaction_hashes: Transaction hashes for matched orders
+        metadata: Additional metadata about the order
+    """
+
+    success: bool
+    order_id: str
+    client_order_id: str
+    status: Literal["LIVE", "MATCHED", "DELAYED"]
+    order_hash: Optional[str] = None
+    transaction_hashes: Optional[List[str]] = None
+    metadata: Optional[Dict[str, any]] = None
+
+
+@dataclass
+class ServerPlaceOrderError:
+    """Error from server order placement.
+
+    Attributes:
+        code: Error code
+        message: Error message
+        data: Additional error data
+    """
+
+    code: int
+    message: str
+    data: Optional[Dict[str, any]] = None
