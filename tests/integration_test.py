@@ -230,22 +230,28 @@ async def run_integration_test(api_key: str) -> None:
     # ===== POLYMARKET WALLET ENDPOINTS =====
     print("💰 Testing Polymarket Wallet Endpoints...\n")
 
-    # Note: get_wallet endpoint doesn't exist in Python SDK yet
-    # await run_test(
-    #     "Polymarket: Get Wallet",
-    #     lambda: dome.polymarket.wallet.get_wallet(
-    #         {"eoa": test_wallet_address, "with_metrics": True}
-    #     ),
-    #     lambda result: (
-    #         isinstance(result.eoa, str)
-    #         and len(result.eoa) > 0
-    #         and isinstance(result.proxy, str)
-    #         and len(result.proxy) > 0
-    #         and isinstance(result.wallet_type, str)
-    #         and len(result.wallet_type) > 0
-    #     )
-    #     or (_ for _ in ()).throw(ValueError("Response must have eoa, proxy, and wallet_type")),
-    # )
+    def validate_wallet(result):
+        if not isinstance(result.eoa, str) or not result.eoa:
+            raise ValueError("Response must have eoa as non-empty string")
+        if not isinstance(result.proxy, str) or not result.proxy:
+            raise ValueError("Response must have proxy as non-empty string")
+        if not isinstance(result.wallet_type, str) or not result.wallet_type:
+            raise ValueError("Response must have wallet_type as non-empty string")
+        if result.wallet_metrics:
+            if not isinstance(result.wallet_metrics.total_volume, (int, float)):
+                raise ValueError("wallet_metrics.total_volume must be a number")
+            if not isinstance(result.wallet_metrics.total_trades, int):
+                raise ValueError("wallet_metrics.total_trades must be an integer")
+            if not isinstance(result.wallet_metrics.total_markets, int):
+                raise ValueError("wallet_metrics.total_markets must be an integer")
+
+    await run_test(
+        "Polymarket: Get Wallet",
+        lambda: dome.polymarket.wallet.get_wallet(
+            {"eoa": test_wallet_address, "with_metrics": True}
+        ),
+        validate_wallet,
+    )
 
     def validate_wallet_pnl(result):
         if not isinstance(result.granularity, str):
@@ -508,28 +514,29 @@ async def run_integration_test(api_key: str) -> None:
         validate_kalshi_markets_special,
     )
 
-    # Note: get_trades endpoint doesn't exist in Python SDK yet
-    # await run_test(
-    #     "Kalshi: Get Trades",
-    #     lambda: dome.kalshi.markets.get_trades(
-    #         {"ticker": test_kalshi_trades_ticker, "limit": 10}
-    #     ),
-    #     lambda result: (
-    #         hasattr(result, "trades")
-    #         and isinstance(result.trades, list)
-    #         and hasattr(result, "pagination")
-    #         and (
-    #             len(result.trades) == 0
-    #             or (
-    #                 hasattr(result.trades[0], "trade_id")
-    #                 and isinstance(result.trades[0].count, (int, float))
-    #                 and isinstance(result.trades[0].yes_price, (int, float))
-    #                 and isinstance(result.trades[0].no_price, (int, float))
-    #             )
-    #         )
-    #     )
-    #     or (_ for _ in ()).throw(ValueError("Response must have trades array and pagination")),
-    # )
+    def validate_kalshi_trades(result):
+        if not hasattr(result, "trades") or not isinstance(result.trades, list):
+            raise ValueError("Response must have trades array")
+        if not hasattr(result, "pagination"):
+            raise ValueError("Response must have pagination object")
+        if len(result.trades) > 0:
+            trade = result.trades[0]
+            if not hasattr(trade, "trade_id"):
+                raise ValueError("Trade must have trade_id")
+            if not isinstance(trade.count, int):
+                raise ValueError("Trade count must be an integer")
+            if not isinstance(trade.yes_price, int):
+                raise ValueError("Trade yes_price must be an integer")
+            if not isinstance(trade.no_price, int):
+                raise ValueError("Trade no_price must be an integer")
+
+    await run_test(
+        "Kalshi: Get Trades",
+        lambda: dome.kalshi.markets.get_trades(
+            {"ticker": test_kalshi_trades_ticker, "limit": 10}
+        ),
+        validate_kalshi_trades,
+    )
 
     def validate_kalshi_orderbooks(result):
         if not hasattr(result, "snapshots") or not isinstance(result.snapshots, list):

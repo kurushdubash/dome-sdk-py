@@ -27,6 +27,17 @@ __all__ = [
     "PnLDataPoint",
     "WalletPnLResponse",
     "GetWalletPnLParams",
+    # Wallet Information Types
+    "HighestVolumeDay",
+    "WalletMetrics",
+    "WalletResponse",
+    "GetWalletParams",
+    # Wallet Positions Types
+    "WinningOutcome",
+    "Position",
+    "PositionsPagination",
+    "PositionsResponse",
+    "GetPositionsParams",
     # Orders Types
     "Order",
     "Pagination",
@@ -59,6 +70,14 @@ __all__ = [
     "KalshiMarketData",
     "KalshiMarketsResponse",
     "GetKalshiMarketsParams",
+    # Kalshi Market Price Types
+    "KalshiPriceSide",
+    "KalshiMarketPriceResponse",
+    "GetKalshiMarketPriceParams",
+    # Kalshi Trades Types
+    "KalshiTrade",
+    "KalshiTradesResponse",
+    "GetKalshiTradesParams",
     # Kalshi Orderbooks Types
     "KalshiOrderbook",
     "KalshiOrderbookSnapshot",
@@ -326,6 +345,199 @@ class GetWalletPnLParams(TypedDict, total=False):
     granularity: Literal["day", "week", "month", "year", "all"]
     start_time: Optional[int]
     end_time: Optional[int]
+
+
+# ===== Wallet Information Types =====
+
+
+@dataclass(frozen=True)
+class HighestVolumeDay:
+    """Highest volume day data.
+
+    Attributes:
+        date: Date in YYYY-MM-DD format
+        volume: Total shares traded on that day (normalized)
+        trades: Number of trades executed on that day
+    """
+
+    date: str
+    volume: float
+    trades: int
+
+
+@dataclass(frozen=True)
+class WalletMetrics:
+    """Wallet trading metrics.
+
+    Attributes:
+        total_volume: Total trading volume in USD
+        total_trades: Total number of trades
+        total_markets: Total number of unique markets traded
+        highest_volume_day: The day with the highest number of shares traded
+        merges: Total number of token merges
+        splits: Total number of token splits
+        conversions: Total number of token conversions
+        redemptions: Total number of token redemptions
+    """
+
+    total_volume: float
+    total_trades: int
+    total_markets: int
+    highest_volume_day: HighestVolumeDay
+    merges: int
+    splits: int
+    conversions: int
+    redemptions: int
+
+
+@dataclass(frozen=True)
+class WalletResponse:
+    """Response from the wallet endpoint.
+
+    Attributes:
+        eoa: EOA (Externally Owned Account) wallet address
+        proxy: Proxy wallet address
+        wallet_type: Type of wallet
+        handle: User handle/username (nullable)
+        pseudonym: User pseudonym/display name (nullable)
+        image: Profile image URL (nullable)
+        wallet_metrics: Trading metrics (only present when with_metrics=true)
+    """
+
+    eoa: str
+    proxy: str
+    wallet_type: str
+    handle: Optional[str]
+    pseudonym: Optional[str]
+    image: Optional[str]
+    wallet_metrics: Optional[WalletMetrics] = None
+
+
+class GetWalletParams(TypedDict, total=False):
+    """Parameters for getting wallet information.
+
+    Attributes:
+        eoa: EOA wallet address (optional)
+        proxy: Proxy wallet address (optional)
+        handle: User handle/username (optional)
+        with_metrics: Include trading metrics (optional)
+        start_time: Start time for metrics calculation as Unix timestamp (optional)
+        end_time: End time for metrics calculation as Unix timestamp (optional)
+    """
+
+    eoa: Optional[str]
+    proxy: Optional[str]
+    handle: Optional[str]
+    with_metrics: Optional[bool]
+    start_time: Optional[int]
+    end_time: Optional[int]
+
+
+# ===== Wallet Positions Types =====
+
+
+@dataclass(frozen=True)
+class WinningOutcome:
+    """Winning outcome information.
+
+    Attributes:
+        id: Token ID of the winning outcome
+        label: Label of the winning outcome
+    """
+
+    id: str
+    label: str
+
+
+@dataclass(frozen=True)
+class Position:
+    """Position data.
+
+    Attributes:
+        wallet: Wallet address
+        token_id: Polymarket token ID
+        condition_id: Condition ID
+        title: Market title
+        shares: Raw shares (not normalized)
+        shares_normalized: Normalized shares (divided by 1,000,000)
+        redeemable: Whether the position can be redeemed
+        market_slug: Market slug
+        event_slug: Event slug
+        image: Market image URL
+        label: Outcome label (e.g., "Yes" or "No")
+        winning_outcome: Winning outcome info (nullable)
+        start_time: Market start time as Unix timestamp
+        end_time: Market end time as Unix timestamp
+        completed_time: Market completion time as Unix timestamp (nullable)
+        close_time: Market close time as Unix timestamp (nullable)
+        game_start_time: Game start time in ISO format for sports markets (nullable)
+        market_status: Market status (open or closed)
+        negativeRisk: Whether the position has negative risk
+    """
+
+    wallet: str
+    token_id: str
+    condition_id: str
+    title: str
+    shares: int
+    shares_normalized: float
+    redeemable: bool
+    market_slug: str
+    event_slug: str
+    image: str
+    label: str
+    winning_outcome: Optional[WinningOutcome]
+    start_time: int
+    end_time: int
+    completed_time: Optional[int]
+    close_time: Optional[int]
+    game_start_time: Optional[str]
+    market_status: Literal["open", "closed"]
+    negativeRisk: bool
+
+
+@dataclass(frozen=True)
+class PositionsPagination:
+    """Positions pagination data.
+
+    Attributes:
+        has_more: Whether there are more positions available
+        limit: Limit used
+        pagination_key: Pagination key for the next page (nullable)
+    """
+
+    has_more: bool
+    limit: int
+    pagination_key: Optional[str]
+
+
+@dataclass(frozen=True)
+class PositionsResponse:
+    """Response from the positions endpoint.
+
+    Attributes:
+        wallet_address: Wallet address (normalized lowercase)
+        positions: List of positions
+        pagination: Pagination information
+    """
+
+    wallet_address: str
+    positions: List[Position]
+    pagination: PositionsPagination
+
+
+class GetPositionsParams(TypedDict, total=False):
+    """Parameters for getting wallet positions.
+
+    Attributes:
+        wallet_address: Proxy wallet address (required)
+        limit: Maximum positions per page (optional, default: 100, max: 100)
+        pagination_key: Pagination key for next page (optional)
+    """
+
+    wallet_address: str
+    limit: Optional[int]
+    pagination_key: Optional[str]
 
 
 # ===== Orders Types =====
@@ -951,6 +1163,108 @@ class GetKalshiOrderbooksParams(TypedDict, total=False):
     start_time: int
     end_time: int
     limit: Optional[int]
+
+
+# ===== Kalshi Market Price Types =====
+
+
+@dataclass(frozen=True)
+class KalshiPriceSide:
+    """Kalshi price side data.
+
+    Attributes:
+        price: Price (0-1)
+        at_time: Unix timestamp in seconds
+    """
+
+    price: float
+    at_time: int
+
+
+@dataclass(frozen=True)
+class KalshiMarketPriceResponse:
+    """Response from the Kalshi market price endpoint.
+
+    Attributes:
+        yes: Yes side price data
+        no: No side price data
+    """
+
+    yes: KalshiPriceSide
+    no: KalshiPriceSide
+
+
+class GetKalshiMarketPriceParams(TypedDict, total=False):
+    """Parameters for getting Kalshi market price.
+
+    Attributes:
+        market_ticker: Kalshi market ticker (required)
+        at_time: Unix timestamp in seconds for historical price (optional)
+    """
+
+    market_ticker: str
+    at_time: Optional[int]
+
+
+# ===== Kalshi Trades Types =====
+
+
+@dataclass(frozen=True)
+class KalshiTrade:
+    """Kalshi trade data.
+
+    Attributes:
+        trade_id: Unique trade identifier
+        market_ticker: Kalshi market ticker
+        count: Number of contracts traded
+        yes_price: Yes side price in cents
+        no_price: No side price in cents
+        yes_price_dollars: Yes side price in dollars
+        no_price_dollars: No side price in dollars
+        taker_side: Which side the taker took (yes or no)
+        created_time: Unix timestamp in seconds
+    """
+
+    trade_id: str
+    market_ticker: str
+    count: int
+    yes_price: int
+    no_price: int
+    yes_price_dollars: float
+    no_price_dollars: float
+    taker_side: Literal["yes", "no"]
+    created_time: int
+
+
+@dataclass(frozen=True)
+class KalshiTradesResponse:
+    """Response from the Kalshi trades endpoint.
+
+    Attributes:
+        trades: List of trades
+        pagination: Pagination information
+    """
+
+    trades: List[KalshiTrade]
+    pagination: Pagination
+
+
+class GetKalshiTradesParams(TypedDict, total=False):
+    """Parameters for getting Kalshi trades.
+
+    Attributes:
+        ticker: Kalshi market ticker (optional)
+        start_time: Start time as Unix timestamp in seconds (optional)
+        end_time: End time as Unix timestamp in seconds (optional)
+        limit: Number of trades to return (optional, default: 100)
+        offset: Pagination offset (optional, default: 0)
+    """
+
+    ticker: Optional[str]
+    start_time: Optional[int]
+    end_time: Optional[int]
+    limit: Optional[int]
+    offset: Optional[int]
 
 
 # ===== WebSocket Types =====

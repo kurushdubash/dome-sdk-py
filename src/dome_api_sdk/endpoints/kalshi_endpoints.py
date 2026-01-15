@@ -4,14 +4,18 @@ from typing import Any, Dict, Optional
 
 from ..base_client import BaseClient
 from ..types import (
+    GetKalshiMarketPriceParams,
     GetKalshiMarketsParams,
     GetKalshiOrderbooksParams,
+    GetKalshiTradesParams,
     KalshiMarketData,
+    KalshiMarketPriceResponse,
     KalshiMarketsResponse,
     KalshiOrderbook,
     KalshiOrderbookPagination,
     KalshiOrderbookSnapshot,
     KalshiOrderbooksResponse,
+    KalshiTradesResponse,
     Pagination,
     RequestConfig,
 )
@@ -164,3 +168,120 @@ class KalshiEndpoints(BaseClient):
         )
 
         return KalshiOrderbooksResponse(snapshots=snapshots, pagination=pagination)
+
+    def get_market_price(
+        self,
+        params: GetKalshiMarketPriceParams,
+        options: Optional[RequestConfig] = None,
+    ) -> KalshiMarketPriceResponse:
+        """Get Kalshi Market Price.
+
+        Fetches the current or historical market price for a Kalshi market by market ticker.
+        Returns separate prices for yes and no sides.
+
+        Args:
+            params: Parameters for the Kalshi market price request
+            options: Optional request configuration
+
+        Returns:
+            Kalshi market price data with yes and no sides
+
+        Raises:
+            ValueError: If the request fails
+        """
+        market_ticker = params["market_ticker"]
+
+        query_params: Dict[str, Any] = {}
+        if params.get("at_time") is not None:
+            query_params["at_time"] = params["at_time"]
+
+        response_data = self._make_request(
+            "GET",
+            f"/kalshi/market-price/{market_ticker}",
+            query_params,
+            options,
+        )
+
+        # Parse price sides
+        from ..types import KalshiPriceSide
+
+        yes_side = KalshiPriceSide(
+            price=response_data["yes"]["price"],
+            at_time=response_data["yes"]["at_time"],
+        )
+        no_side = KalshiPriceSide(
+            price=response_data["no"]["price"],
+            at_time=response_data["no"]["at_time"],
+        )
+
+        return KalshiMarketPriceResponse(yes=yes_side, no=no_side)
+
+    def get_trades(
+        self,
+        params: GetKalshiTradesParams,
+        options: Optional[RequestConfig] = None,
+    ) -> KalshiTradesResponse:
+        """Get Kalshi Trades.
+
+        Fetches historical trade data for Kalshi markets with optional filtering
+        by ticker and time range.
+
+        Args:
+            params: Parameters for the Kalshi trades request
+            options: Optional request configuration
+
+        Returns:
+            Kalshi trades data with pagination
+
+        Raises:
+            ValueError: If the request fails
+        """
+        query_params: Dict[str, Any] = {}
+
+        if params.get("ticker"):
+            query_params["ticker"] = params["ticker"]
+        if params.get("start_time") is not None:
+            query_params["start_time"] = params["start_time"]
+        if params.get("end_time") is not None:
+            query_params["end_time"] = params["end_time"]
+        if params.get("limit") is not None:
+            query_params["limit"] = params["limit"]
+        if params.get("offset") is not None:
+            query_params["offset"] = params["offset"]
+
+        response_data = self._make_request(
+            "GET",
+            "/kalshi/trades",
+            query_params,
+            options,
+        )
+
+        # Parse trades
+        from ..types import KalshiTrade
+
+        trades = []
+        for trade_data in response_data["trades"]:
+            trades.append(
+                KalshiTrade(
+                    trade_id=trade_data["trade_id"],
+                    market_ticker=trade_data["market_ticker"],
+                    count=trade_data["count"],
+                    yes_price=trade_data["yes_price"],
+                    no_price=trade_data["no_price"],
+                    yes_price_dollars=trade_data["yes_price_dollars"],
+                    no_price_dollars=trade_data["no_price_dollars"],
+                    taker_side=trade_data["taker_side"],
+                    created_time=trade_data["created_time"],
+                )
+            )
+
+        # Parse pagination
+        pagination_data = response_data["pagination"]
+        pagination = Pagination(
+            limit=pagination_data["limit"],
+            offset=pagination_data["offset"],
+            total=pagination_data["total"],
+            has_more=pagination_data["has_more"],
+        )
+
+        return KalshiTradesResponse(trades=trades, pagination=pagination)
