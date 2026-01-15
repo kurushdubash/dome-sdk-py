@@ -67,6 +67,74 @@ from dome_api_sdk import DomeClient
 client = DomeClient()
 ```
 
+## Trading with Polymarket Router
+
+The SDK includes a `PolymarketRouter` for integrating wallet providers (Privy, MetaMask, etc.) with Polymarket trading. This allows users to sign once to create API credentials, then trade without signing every order.
+
+### Polymarket Router Endpoints
+
+| Method | Description | Endpoint Path |
+|--------|-------------|---------------|
+| `router.link_user()` | Link a user to Polymarket by creating CLOB API credentials | Direct CLOB integration |
+| `router.place_order()` | Place an order on Polymarket via Dome server | `/polymarket/placeOrder` |
+| `router.check_allowances()` | Check if wallet has required token allowances | RPC call |
+
+### Quick Start: Privy + Polymarket Trading
+
+```python
+from dome_api_sdk import (
+    DomeClient,
+    PolymarketRouter,
+    create_privy_client,
+    create_privy_signer,
+)
+
+# Initialize router with Privy config
+router = PolymarketRouter({
+    "api_key": "your-dome-api-key",
+    "privy": {
+        "app_id": "your-privy-app-id",
+        "app_secret": "your-privy-app-secret",
+        "authorization_key": "your-privy-auth-key",
+    },
+})
+
+# Create signer for user's wallet
+privy = create_privy_client({
+    "app_id": "your-privy-app-id",
+    "app_secret": "your-privy-app-secret",
+    "authorization_key": "your-privy-auth-key",
+})
+signer = create_privy_signer(privy, privy_wallet_id, wallet_address)
+
+# Step 1: Link user (one-time, creates API credentials)
+credentials = await router.link_user({
+    "user_id": "user-123",
+    "signer": signer,
+    "privy_wallet_id": privy_wallet_id,
+    "auto_set_allowances": True,
+})
+
+# Step 2: Place orders (no signatures required after linking)
+result = await router.place_order({
+    "user_id": "user-123",
+    "market_id": "104173557214744537570424345347209544585775842950109756851652855913015295701992",
+    "side": "buy",
+    "size": 10,
+    "price": 0.65,
+    "order_type": "GTC",  # 'GTC' | 'GTD' | 'FOK' | 'FAK'
+    "signer": signer,
+}, credentials)
+```
+
+**Order Types:**
+- `GTC` (Good Till Cancel) - Stays on book until filled (default)
+- `GTD` (Good Till Date) - Expires at specified time
+- `FOK` (Fill Or Kill) - Fill completely immediately or cancel
+- `FAK` (Fill And Kill) - Fill as much as possible, cancel rest
+
+See the [examples/](./examples/) directory for complete integration examples.
+
 ## API Reference
 
 ### Complete API Endpoint List
@@ -84,6 +152,7 @@ All Polymarket endpoints are accessed through `dome.polymarket.*`:
 | **Markets** | `markets.get_markets()` | Get market data with filtering (slug, tags, status, etc.) | `/polymarket/markets` |
 | **Markets** | `markets.get_orderbooks()` | Get historical orderbook snapshots for an asset | `/polymarket/orderbooks` |
 | **Orders** | `orders.get_orders()` | Get order data with filtering (market, user, time range, etc.) | `/polymarket/orders` |
+| **Trading** | `router.place_order()` | Place an order on Polymarket (requires PolymarketRouter) | `/polymarket/placeOrder` |
 | **WebSocket** | `websocket.subscribe()` | Subscribe to real-time order events via WebSocket (supports users, condition_ids, market_slugs filters) | `wss://ws.domeapi.io/{api_key}` |
 | **WebSocket** | `websocket.update()` | Update an existing subscription's filters | `wss://ws.domeapi.io/{api_key}` |
 | **WebSocket** | `websocket.unsubscribe()` | Unsubscribe from order events | `wss://ws.domeapi.io/{api_key}` |
@@ -537,6 +606,73 @@ activity = dome.polymarket.activity.get_activity({
 })
 print(f"Activities: {len(activity.activities)}")
 ```
+
+### Trading - Place Orders on Polymarket
+
+Place orders on Polymarket using the PolymarketRouter. This requires one-time user linking and then allows gasless trading via API credentials.
+
+```python
+from dome_api_sdk import (
+    PolymarketRouter,
+    create_privy_client,
+    create_privy_signer,
+)
+
+# Initialize router
+router = PolymarketRouter({
+    "api_key": "your-dome-api-key",
+    "privy": {
+        "app_id": "your-privy-app-id",
+        "app_secret": "your-privy-app-secret",
+        "authorization_key": "your-privy-auth-key",
+    },
+})
+
+# Create Privy signer
+privy = create_privy_client({
+    "app_id": "your-privy-app-id",
+    "app_secret": "your-privy-app-secret",
+    "authorization_key": "your-privy-auth-key",
+})
+signer = create_privy_signer(privy, privy_wallet_id, wallet_address)
+
+# Link user (one-time setup)
+credentials = await router.link_user({
+    "user_id": "user-123",
+    "signer": signer,
+    "privy_wallet_id": privy_wallet_id,
+    "auto_set_allowances": True,  # Automatically set token approvals
+    "sponsor_gas": False,  # Optional: Use Privy gas sponsorship
+})
+
+# Place a market order
+result = await router.place_order({
+    "user_id": "user-123",
+    "market_id": "104173557214744537570424345347209544585775842950109756851652855913015295701992",
+    "side": "buy",  # "buy" or "sell"
+    "size": 10,  # Number of shares
+    "price": 0.65,  # Price per share
+    "order_type": "GTC",  # 'GTC', 'GTD', 'FOK', 'FAK'
+    "signer": signer,
+}, credentials)
+
+print(f"Order placed! Order ID: {result.get('orderId')}")
+print(f"Status: {result['status']}")
+
+# Check allowances before trading
+allowances = await router.check_allowances(wallet_address)
+if not allowances.all_set:
+    print("Token allowances need to be set")
+```
+
+**Router Features:**
+- **Wallet Agnostic**: Works with Privy, MetaMask, or any EIP-712 signer
+- **One-Time Linking**: User signs once to create Polymarket API credentials
+- **Gasless Trading**: Orders placed via API keys, no gas required
+- **Automatic Allowances**: Optionally auto-set token approvals during linking
+- **Order Types**: Supports GTC, GTD, FOK, and FAK order types
+
+See the [examples/](./examples/) directory for complete integration examples with Privy, including server-side signing.
 
 ### Kalshi Markets
 
