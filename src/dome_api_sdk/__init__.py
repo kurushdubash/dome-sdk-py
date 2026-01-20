@@ -56,7 +56,35 @@ For Polymarket trading with external wallets (Privy, MetaMask, etc.):
 from .client import DomeClient
 
 # Router and utilities
-from .router import PolymarketRouter
+from .router import (
+    PolymarketRouter,
+    PolymarketRouterWithEscrow,
+    PolymarketRouterWithEscrowConfig,
+    PlaceOrderWithEscrowParams,
+    EscrowConfig,
+)
+
+# Escrow module
+from .escrow import (
+    OrderParams,
+    FeeAuthorization,
+    SignedFeeAuthorization,
+    FEE_AUTHORIZATION_TYPES,
+    generate_order_id,
+    verify_order_id,
+    create_eip712_domain,
+    create_fee_authorization,
+    sign_fee_authorization,
+    sign_fee_authorization_with_signer,
+    verify_fee_authorization_signature,
+    USDC_POLYGON,
+    ESCROW_CONTRACT_POLYGON,
+    format_usdc,
+    parse_usdc,
+    format_bps,
+    calculate_fee,
+    calculate_order_size_usdc,
+)
 from .types import (
     ActiveSubscription,
     Activity,
@@ -275,6 +303,29 @@ __all__ = [
     "ServerPlaceOrderError",
     # Router
     "PolymarketRouter",
+    "PolymarketRouterWithEscrow",
+    "PolymarketRouterWithEscrowConfig",
+    "PlaceOrderWithEscrowParams",
+    "EscrowConfig",
+    # Escrow
+    "OrderParams",
+    "FeeAuthorization",
+    "SignedFeeAuthorization",
+    "FEE_AUTHORIZATION_TYPES",
+    "generate_order_id",
+    "verify_order_id",
+    "create_eip712_domain",
+    "create_fee_authorization",
+    "sign_fee_authorization",
+    "sign_fee_authorization_with_signer",
+    "verify_fee_authorization_signature",
+    "USDC_POLYGON",
+    "ESCROW_CONTRACT_POLYGON",
+    "format_usdc",
+    "parse_usdc",
+    "format_bps",
+    "calculate_fee",
+    "calculate_order_size_usdc",
     # Utilities
     "PrivyClient",
     "RouterSigner",
