@@ -592,16 +592,16 @@ class Pagination:
 
     Attributes:
         limit: Limit
-        offset: Offset (deprecated, use pagination_key)
+        offset: Offset (deprecated, use pagination_key) (optional)
         total: Total count
         has_more: Whether there are more results
         pagination_key: Base64-encoded cursor for the next page (optional)
     """
 
     limit: int
-    offset: int
     total: int
     has_more: bool
+    offset: Optional[int] = None
     pagination_key: Optional[str] = None
 
 

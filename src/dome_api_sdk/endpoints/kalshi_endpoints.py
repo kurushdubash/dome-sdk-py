@@ -97,9 +97,9 @@ class KalshiEndpoints(BaseClient):
         pagination_data = response_data["pagination"]
         pagination = Pagination(
             limit=pagination_data["limit"],
-            offset=pagination_data.get("offset", 0),
             total=pagination_data["total"],
             has_more=pagination_data["has_more"],
+            offset=pagination_data.get("offset"),
             pagination_key=pagination_data.get("pagination_key"),
         )
 
@@ -282,9 +282,9 @@ class KalshiEndpoints(BaseClient):
         pagination_data = response_data["pagination"]
         pagination = Pagination(
             limit=pagination_data["limit"],
-            offset=pagination_data.get("offset", 0),
             total=pagination_data["total"],
             has_more=pagination_data["has_more"],
+            offset=pagination_data.get("offset"),
             pagination_key=pagination_data.get("pagination_key"),
         )
 

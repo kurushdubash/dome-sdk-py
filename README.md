@@ -6,7 +6,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
 
-A comprehensive, type-safe, async-first Python SDK for [Dome API](https://www.domeapi.io/). Features include market data, wallet analytics, order tracking, and cross-platform market matching for prediction markets. For detailed API documentation, visit [DomeApi.io](https://www.domeapi.io/).
+A comprehensive, type-safe Python SDK for [Dome API](https://www.domeapi.io/). Features include market data, wallet analytics, order tracking, cross-platform market matching, real-time WebSocket subscriptions, and Polymarket trading integration. For detailed API documentation, visit [DomeApi.io](https://www.domeapi.io/).
 
 ## Installation
 
@@ -158,7 +158,9 @@ All Polymarket endpoints are accessed through `dome.polymarket.*`:
 | **WebSocket** | `websocket.update()` | Update an existing subscription's filters | `wss://ws.domeapi.io/{api_key}` |
 | **WebSocket** | `websocket.unsubscribe()` | Unsubscribe from order events | `wss://ws.domeapi.io/{api_key}` |
 | **WebSocket** | `websocket.get_active_subscriptions()` | Get all active subscriptions | N/A |
+| **Wallet** | `wallet.get_wallet()` | Get wallet information by EOA, proxy, or handle (with optional metrics) | `/polymarket/wallet` |
 | **Wallet** | `wallet.get_wallet_pnl()` | Get realized profit and loss (PnL) for a wallet | `/polymarket/wallet/pnl/{wallet_address}` |
+| **Wallet** | `wallet.get_positions()` | Get all positions for a wallet address | `/polymarket/positions/wallet/{wallet_address}` |
 | **Activity** | `activity.get_activity()` | Get trading activity (MERGE, SPLIT, REDEEM) for a user | `/polymarket/activity` |
 
 #### Kalshi Endpoints
@@ -168,7 +170,9 @@ All Kalshi endpoints are accessed through `dome.kalshi.*`:
 | Category | Method | Description | Endpoint Path |
 |----------|--------|-------------|---------------|
 | **Markets** | `markets.get_markets()` | Get Kalshi market data with filtering | `/kalshi/markets` |
+| **Markets** | `markets.get_market_price()` | Get current or historical Kalshi market price (yes/no sides) | `/kalshi/market-price/{market_ticker}` |
 | **Orderbooks** | `orderbooks.get_orderbooks()` | Get historical Kalshi orderbook snapshots | `/kalshi/orderbooks` |
+| **Trades** | `markets.get_trades()` | Get historical Kalshi trade data | `/kalshi/trades` |
 
 #### Matching Markets Endpoints
 
@@ -652,6 +656,80 @@ asyncio.run(main())
 - **Re-subscription**: Automatically re-subscribes on reconnection
 - **Type Safety**: Full type hints for all WebSocket messages and events
 
+### Wallet Information
+
+Get wallet information by EOA, proxy wallet address, or handle:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+# Get wallet by EOA address
+wallet = dome.polymarket.wallet.get_wallet({
+    "eoa": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b"
+})
+print(f"EOA: {wallet.eoa}")
+print(f"Proxy: {wallet.proxy}")
+print(f"Handle: {wallet.handle}")
+
+# Get wallet by proxy address
+wallet_by_proxy = dome.polymarket.wallet.get_wallet({
+    "proxy": "0x1234567890abcdef1234567890abcdef12345678"
+})
+
+# Get wallet by handle (with or without @ prefix)
+wallet_by_handle = dome.polymarket.wallet.get_wallet({
+    "handle": "@username"  # or just "username"
+})
+
+# Get wallet with trading metrics
+wallet_with_metrics = dome.polymarket.wallet.get_wallet({
+    "eoa": "0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
+    "with_metrics": True,
+    "start_time": 1726857600,  # Optional: filter metrics by time range
+    "end_time": 1758316829
+})
+if wallet_with_metrics.wallet_metrics:
+    print(f"Total Volume: ${wallet_with_metrics.wallet_metrics.total_volume:,.2f}")
+    print(f"Total Trades: {wallet_with_metrics.wallet_metrics.total_trades}")
+    print(f"Markets Traded: {wallet_with_metrics.wallet_metrics.total_markets}")
+```
+
+### Wallet Positions
+
+Get all positions for a wallet address:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+# Get wallet positions (proxy wallet address required)
+positions = dome.polymarket.wallet.get_positions({
+    "wallet_address": "0x1234567890abcdef1234567890abcdef12345678",  # Proxy wallet
+    "limit": 100
+})
+print(f"Wallet: {positions.wallet_address}")
+print(f"Positions: {len(positions.positions)}")
+
+for position in positions.positions:
+    print(f"  {position.title}: {position.shares_normalized} shares @ {position.label}")
+    print(f"    Market: {position.market_slug}")
+    print(f"    Redeemable: {position.redeemable}")
+    if position.winning_outcome:
+        print(f"    Winner: {position.winning_outcome.label}")
+
+# Pagination with pagination_key
+if positions.pagination.has_more:
+    next_page = dome.polymarket.wallet.get_positions({
+        "wallet_address": "0x1234567890abcdef1234567890abcdef12345678",
+        "limit": 100,
+        "pagination_key": positions.pagination.pagination_key
+    })
+    print(f"Next page: {len(next_page.positions)} positions")
+```
+
 ### Wallet PnL
 
 Get realized profit and loss for a wallet:
@@ -784,7 +862,7 @@ dome = DomeClient({"api_key": "your-api-key"})
 kalshi_markets = dome.kalshi.markets.get_markets({
     "status": "open",
     "limit": 20,
-    "min_volume": 10000000  # in cents
+    "min_volume": 10000000  # in dollars
 })
 print(f"Kalshi markets: {len(kalshi_markets.markets)}")
 
@@ -793,6 +871,89 @@ kalshi_filtered = dome.kalshi.markets.get_markets({
     "market_ticker": ["KXNFLGAME-25AUG16ARIDEN-ARI"],
     "limit": 10
 })
+
+# Pagination with pagination_key
+first_page = dome.kalshi.markets.get_markets({
+    "status": "open",
+    "limit": 20
+})
+if first_page.pagination.has_more:
+    next_page = dome.kalshi.markets.get_markets({
+        "status": "open",
+        "limit": 20,
+        "pagination_key": first_page.pagination.pagination_key
+    })
+    print(f"Next page: {len(next_page.markets)} markets")
+```
+
+### Kalshi Market Price
+
+Get current or historical Kalshi market prices (yes/no sides):
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+# Get current price
+price = dome.kalshi.markets.get_market_price({
+    "market_ticker": "KXNFLGAME-25AUG16ARIDEN-ARI"
+})
+print(f"Yes Price: {price.yes.price} (at {price.yes.at_time})")
+print(f"No Price: {price.no.price} (at {price.no.at_time})")
+
+# Get historical price
+historical_price = dome.kalshi.markets.get_market_price({
+    "market_ticker": "KXNFLGAME-25AUG16ARIDEN-ARI",
+    "at_time": 1740000000  # Unix timestamp in seconds
+})
+print(f"Historical Yes: {historical_price.yes.price}")
+print(f"Historical No: {historical_price.no.price}")
+```
+
+### Kalshi Trades
+
+Get historical Kalshi trade data:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+# Get all trades
+all_trades = dome.kalshi.markets.get_trades({
+    "limit": 100
+})
+print(f"Total trades: {len(all_trades.trades)}")
+
+# Get trades for specific market
+market_trades = dome.kalshi.markets.get_trades({
+    "ticker": "KXNFLGAME-25AUG16ARIDEN-ARI",
+    "limit": 50
+})
+for trade in market_trades.trades[:5]:  # Show first 5
+    print(f"Trade {trade.trade_id}: {trade.count} contracts @ Yes: ${trade.yes_price_dollars:.2f}")
+    print(f"  Taker side: {trade.taker_side}")
+    print(f"  Time: {trade.created_time}")
+
+# Get trades with time filter
+filtered_trades = dome.kalshi.markets.get_trades({
+    "ticker": "KXNFLGAME-25AUG16ARIDEN-ARI",
+    "start_time": 1726857600,  # Unix timestamp in seconds
+    "end_time": 1758316829,
+    "limit": 100
+})
+
+# Pagination with pagination_key
+first_page = dome.kalshi.markets.get_trades({
+    "limit": 50
+})
+if first_page.pagination.has_more:
+    next_page = dome.kalshi.markets.get_trades({
+        "limit": 50,
+        "pagination_key": first_page.pagination.pagination_key
+    })
+    print(f"Next page: {len(next_page.trades)} trades")
 ```
 
 ### Kalshi Orderbooks
