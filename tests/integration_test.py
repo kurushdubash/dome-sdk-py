@@ -222,9 +222,7 @@ async def run_integration_test(api_key: str) -> None:
 
     await run_test(
         "Polymarket: Get Markets (with filters)",
-        lambda: dome.polymarket.markets.get_markets(
-            {"status": "open", "limit": 20, "offset": 0}
-        ),
+        lambda: dome.polymarket.markets.get_markets({"status": "open", "limit": 20}),
     )
 
     # ===== POLYMARKET WALLET ENDPOINTS =====
@@ -339,7 +337,6 @@ async def run_integration_test(api_key: str) -> None:
                 "start_time": test_start_time_seconds,
                 "end_time": test_end_time_seconds,
                 "limit": 20,
-                "offset": 0,
             }
         ),
         validate_orders_basic,

@@ -53,6 +53,10 @@ __all__ = [
     "Market",
     "MarketsResponse",
     "GetMarketsParams",
+    # Polymarket Events Types
+    "Event",
+    "EventsResponse",
+    "GetEventsParams",
     # Polymarket Activity Types
     "Activity",
     "ActivityPagination",
@@ -588,15 +592,17 @@ class Pagination:
 
     Attributes:
         limit: Limit
-        offset: Offset
+        offset: Offset (deprecated, use pagination_key)
         total: Total count
         has_more: Whether there are more results
+        pagination_key: Base64-encoded cursor for the next page (optional)
     """
 
     limit: int
     offset: int
     total: int
     has_more: bool
+    pagination_key: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -622,7 +628,8 @@ class GetOrdersParams(TypedDict, total=False):
         start_time: Start time as Unix timestamp (optional)
         end_time: End time as Unix timestamp (optional)
         limit: Limit (optional)
-        offset: Offset (optional)
+        offset: Offset (deprecated, use pagination_key) (optional)
+        pagination_key: Base64-encoded cursor for pagination (optional)
         user: User address (optional)
     """
 
@@ -633,6 +640,7 @@ class GetOrdersParams(TypedDict, total=False):
     end_time: Optional[int]
     limit: Optional[int]
     offset: Optional[int]
+    pagination_key: Optional[str]
     user: Optional[str]
 
 
@@ -914,19 +922,106 @@ class GetMarketsParams(TypedDict, total=False):
         market_slug: Filter markets by market slug(s). Can provide multiple values.
         event_slug: Filter markets by event slug(s). Can provide multiple values.
         condition_id: Filter markets by condition ID(s). Can provide multiple values.
+        token_id: Filter markets by token ID(s). Can provide multiple values (max 100).
         tags: Filter markets by tag(s). Can provide multiple values.
+        search: Search markets by keywords in title and description
         status: Filter markets by status (whether they're open or closed)
         min_volume: Filter markets with total trading volume greater than or equal to this amount (USD)
+        start_time: Filter markets from this Unix timestamp in seconds (inclusive)
+        end_time: Filter markets until this Unix timestamp in seconds (inclusive)
         limit: Number of markets to return (1-100). Default: 10
-        offset: Number of markets to skip for pagination
+        offset: Number of markets to skip for pagination (deprecated, use pagination_key)
+        pagination_key: Base64-encoded cursor for pagination
     """
 
     market_slug: Optional[Union[str, List[str]]]
     event_slug: Optional[Union[str, List[str]]]
     condition_id: Optional[Union[str, List[str]]]
+    token_id: Optional[Union[str, List[str]]]
     tags: Optional[Union[str, List[str]]]
+    search: Optional[str]
     status: Optional[Literal["open", "closed"]]
     min_volume: Optional[float]
+    start_time: Optional[int]
+    end_time: Optional[int]
+    limit: Optional[int]
+    offset: Optional[int]
+    pagination_key: Optional[str]
+
+
+# ===== Polymarket Events Types =====
+
+
+@dataclass(frozen=True)
+class Event:
+    """Event data (group of related markets).
+
+    Attributes:
+        event_slug: Unique identifier for the event
+        title: Event title
+        subtitle: Event subtitle or description (nullable)
+        status: Event status - 'open' if any market is open, 'closed' if all markets are closed
+        start_time: Unix timestamp (seconds) when the event started
+        end_time: Unix timestamp (seconds) when the event ends
+        volume_fiat_amount: Total trading volume across all markets in the event (USD)
+        settlement_sources: Resolution/settlement source for the event (nullable)
+        rules_url: URL to the event rules (nullable)
+        image: Event image URL (nullable)
+        tags: Array of category tags for the event
+        market_count: Number of markets in this event
+        markets: List of markets in this event (only included when include_markets=true)
+    """
+
+    event_slug: str
+    title: str
+    subtitle: Optional[str]
+    status: Literal["open", "closed"]
+    start_time: int
+    end_time: int
+    volume_fiat_amount: float
+    settlement_sources: Optional[str]
+    rules_url: Optional[str]
+    image: Optional[str]
+    tags: List[str]
+    market_count: int
+    markets: Optional[List[Market]] = None
+
+
+@dataclass(frozen=True)
+class EventsResponse:
+    """Response from the events endpoint.
+
+    Attributes:
+        events: List of events
+        pagination: Pagination information
+    """
+
+    events: List[Event]
+    pagination: Pagination
+
+
+class GetEventsParams(TypedDict, total=False):
+    """Parameters for getting events.
+
+    Attributes:
+        event_slug: Filter by specific event slug (optional)
+        tags: Filter events by tag(s)/category. Can provide multiple values (optional)
+        status: Filter events by status (open or closed) (optional)
+        include_markets: Set to 'true' to include list of markets for each event (optional)
+        start_time: Filter events starting after this Unix timestamp (seconds) (optional)
+        end_time: Filter events starting before this Unix timestamp (seconds) (optional)
+        game_start_time: Filter events by game start time (Unix timestamp in seconds) (optional)
+        limit: Number of events to return (1-100). Default: 10 (optional)
+        offset: Number of events to skip for pagination (optional)
+    """
+
+    event_slug: Optional[str]
+    tags: Optional[Union[str, List[str]]]
+    status: Optional[Literal["open", "closed"]]
+    include_markets: Optional[str]
+    start_time: Optional[int]
+    end_time: Optional[int]
+    game_start_time: Optional[int]
     limit: Optional[int]
     offset: Optional[int]
 
@@ -973,15 +1068,15 @@ class ActivityPagination:
 
     Attributes:
         limit: Limit
-        offset: Offset
         count: Total number of activities matching the filters
         has_more: Whether there are more activities available
+        pagination_key: Base64-encoded cursor for the next page (optional)
     """
 
     limit: int
-    offset: int
     count: int
     has_more: bool
+    pagination_key: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -1001,22 +1096,22 @@ class GetActivityParams(TypedDict, total=False):
     """Parameters for getting activity.
 
     Attributes:
-        user: User wallet address to fetch activity for (required)
+        user: User wallet address to fetch activity for (optional, if not provided returns activity for all users)
         start_time: Filter activity from this Unix timestamp in seconds (inclusive) (optional)
         end_time: Filter activity until this Unix timestamp in seconds (inclusive) (optional)
         market_slug: Filter activity by market slug (optional)
         condition_id: Filter activity by condition ID (optional)
         limit: Number of activities to return (1-1000) (optional, default: 100)
-        offset: Number of activities to skip for pagination (optional)
+        pagination_key: Base64-encoded cursor for pagination (optional)
     """
 
-    user: str
+    user: Optional[str]
     start_time: Optional[int]
     end_time: Optional[int]
     market_slug: Optional[str]
     condition_id: Optional[str]
     limit: Optional[int]
-    offset: Optional[int]
+    pagination_key: Optional[str]
 
 
 # ===== Kalshi Markets Types =====
@@ -1072,18 +1167,20 @@ class GetKalshiMarketsParams(TypedDict, total=False):
     Attributes:
         market_ticker: Filter markets by market ticker(s). Can provide multiple values.
         event_ticker: Filter markets by event ticker(s). Can provide multiple values.
+        search: Search markets by keywords in title and description
         status: Filter markets by status (whether they're open or closed)
-        min_volume: Filter markets with total trading volume greater than or equal to this amount (in cents)
+        min_volume: Filter markets with total trading volume greater than or equal to this amount (in dollars)
         limit: Number of markets to return (1-100). Default: 10
-        offset: Number of markets to skip for pagination
+        pagination_key: Base64-encoded cursor for pagination
     """
 
     market_ticker: Optional[Union[str, List[str]]]
     event_ticker: Optional[Union[str, List[str]]]
+    search: Optional[str]
     status: Optional[Literal["open", "closed"]]
     min_volume: Optional[float]
     limit: Optional[int]
-    offset: Optional[int]
+    pagination_key: Optional[str]
 
 
 # ===== Kalshi Orderbooks Types =====
@@ -1257,14 +1354,14 @@ class GetKalshiTradesParams(TypedDict, total=False):
         start_time: Start time as Unix timestamp in seconds (optional)
         end_time: End time as Unix timestamp in seconds (optional)
         limit: Number of trades to return (optional, default: 100)
-        offset: Pagination offset (optional, default: 0)
+        pagination_key: Base64-encoded cursor for pagination (optional)
     """
 
     ticker: Optional[str]
     start_time: Optional[int]
     end_time: Optional[int]
     limit: Optional[int]
-    offset: Optional[int]
+    pagination_key: Optional[str]
 
 
 # ===== WebSocket Types =====

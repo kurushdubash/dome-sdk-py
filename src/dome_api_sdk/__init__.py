@@ -54,6 +54,9 @@ For Polymarket trading with external wallets (Privy, MetaMask, etc.):
 """
 
 from .client import DomeClient
+
+# Router and utilities
+from .router import PolymarketRouter
 from .types import (
     ActiveSubscription,
     Activity,
@@ -91,14 +94,14 @@ from .types import (
     KalshiMarket,
     KalshiMarketData,
     KalshiMarketPriceResponse,
-    KalshiPriceSide,
-    KalshiTrade,
-    KalshiTradesResponse,
     KalshiMarketsResponse,
     KalshiOrderbook,
     KalshiOrderbookPagination,
     KalshiOrderbookSnapshot,
     KalshiOrderbooksResponse,
+    KalshiPriceSide,
+    KalshiTrade,
+    KalshiTradesResponse,
     LinkPolymarketUserParams,
     Market,
     MarketData,
@@ -115,13 +118,13 @@ from .types import (
     Pagination,
     PlaceOrderParams,
     PnLDataPoint,
-    Position,
-    PositionsPagination,
-    PositionsResponse,
     PolymarketCredentials,
     PolymarketMarket,
     PolymarketOrderType,
     PolymarketRouterConfig,
+    Position,
+    PositionsPagination,
+    PositionsResponse,
     PrivyRouterConfig,
     RequestConfig,
     SafeLinkResult,
@@ -139,24 +142,21 @@ from .types import (
     WalletPnLResponse,
     WalletResponse,
     WalletType,
-    WinningOutcome,
     WebSocketOrderEvent,
+    WinningOutcome,
 )
-
-# Router and utilities
-from .router import PolymarketRouter
 from .utils import (
+    POLYGON_ADDRESSES,
     PrivyClient,
     RouterSigner,
+    check_all_allowances,
+    check_privy_wallet_allowances,
     create_privy_client,
     create_privy_signer,
     create_privy_signer_from_env,
-    check_privy_wallet_allowances,
-    set_privy_wallet_allowances,
-    POLYGON_ADDRESSES,
-    check_all_allowances,
-    set_all_allowances,
     get_polygon_provider,
+    set_all_allowances,
+    set_privy_wallet_allowances,
 )
 
 __version__ = "0.1.5"

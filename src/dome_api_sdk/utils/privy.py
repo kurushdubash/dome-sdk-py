@@ -18,7 +18,6 @@ from ..types import (
     PrivyRouterConfig,
 )
 
-
 # Authorization key prefix used by Privy
 AUTHORIZATION_PRIVATE_KEY_PREFIX = "wallet-auth:"
 
@@ -44,7 +43,7 @@ def _normalize_p256_private_key_to_scalar(authorization_key: str) -> bytes:
         raise ValueError("Invalid wallet authorization private key")
 
     # Extract 32-byte scalar
-    private_key_scalar = raw_bytes[marker_pos + 2:marker_pos + 34]
+    private_key_scalar = raw_bytes[marker_pos + 2 : marker_pos + 34]
 
     if len(private_key_scalar) != 32:
         raise ValueError("Invalid wallet authorization private key length")
@@ -101,13 +100,16 @@ def _create_authorization_signature(
 
     # Create signing key and sign
     signing_key = SigningKey.from_string(private_key_scalar, curve=NIST256p)
-    signature_der = signing_key.sign_digest(message_hash, sigencode=lambda r, s, order: _encode_der_signature(r, s))
+    signature_der = signing_key.sign_digest(
+        message_hash, sigencode=lambda r, s, order: _encode_der_signature(r, s)
+    )
 
     return base64.b64encode(signature_der).decode("utf-8")
 
 
 def _encode_der_signature(r: int, s: int) -> bytes:
     """Encode ECDSA signature (r, s) in DER format."""
+
     def encode_integer(value: int) -> bytes:
         # Convert to bytes, big-endian
         value_bytes = value.to_bytes((value.bit_length() + 7) // 8, byteorder="big")
@@ -122,6 +124,7 @@ def _encode_der_signature(r: int, s: int) -> bytes:
     # Sequence tag (0x30) + length + contents
     contents = r_encoded + s_encoded
     return bytes([0x30, len(contents)]) + contents
+
 
 # Polygon contract addresses for Polymarket
 POLYGON_ADDRESSES = {
@@ -196,7 +199,8 @@ class PrivyClient:
         api_typed_data = {
             "domain": typed_data.get("domain", {}),
             "types": typed_data.get("types", {}),
-            "primary_type": typed_data.get("primaryType") or typed_data.get("primary_type"),
+            "primary_type": typed_data.get("primaryType")
+            or typed_data.get("primary_type"),
             "message": typed_data.get("message", {}),
         }
 
@@ -615,7 +619,9 @@ async def set_privy_wallet_allowances(
         # Remove 0x prefix from operator and pad to 32 bytes
         operator_padded = operator[2:].lower().zfill(64)
         # true = 1, padded to 32 bytes
-        approved_padded = "0000000000000000000000000000000000000000000000000000000000000001"
+        approved_padded = (
+            "0000000000000000000000000000000000000000000000000000000000000001"
+        )
         return f"0xa22cb465{operator_padded}{approved_padded}"
 
     tx_hashes: Dict[str, Dict[str, Optional[str]]] = {"usdc": {}, "ctf": {}}
@@ -624,59 +630,71 @@ async def set_privy_wallet_allowances(
     approvals: List[Dict[str, Any]] = []
 
     if not allowances.usdc_ctf_exchange:
-        approvals.append({
-            "name": "USDC -> CTF Exchange",
-            "token": POLYGON_ADDRESSES["USDC"],
-            "spender": POLYGON_ADDRESSES["CTF_EXCHANGE"],
-            "is_erc20": True,
-            "key": "ctf_exchange",
-            "type": "usdc",
-        })
+        approvals.append(
+            {
+                "name": "USDC -> CTF Exchange",
+                "token": POLYGON_ADDRESSES["USDC"],
+                "spender": POLYGON_ADDRESSES["CTF_EXCHANGE"],
+                "is_erc20": True,
+                "key": "ctf_exchange",
+                "type": "usdc",
+            }
+        )
     if not allowances.usdc_neg_risk_ctf_exchange:
-        approvals.append({
-            "name": "USDC -> Neg Risk CTF Exchange",
-            "token": POLYGON_ADDRESSES["USDC"],
-            "spender": POLYGON_ADDRESSES["NEG_RISK_CTF_EXCHANGE"],
-            "is_erc20": True,
-            "key": "neg_risk_ctf_exchange",
-            "type": "usdc",
-        })
+        approvals.append(
+            {
+                "name": "USDC -> Neg Risk CTF Exchange",
+                "token": POLYGON_ADDRESSES["USDC"],
+                "spender": POLYGON_ADDRESSES["NEG_RISK_CTF_EXCHANGE"],
+                "is_erc20": True,
+                "key": "neg_risk_ctf_exchange",
+                "type": "usdc",
+            }
+        )
     if not allowances.usdc_neg_risk_adapter:
-        approvals.append({
-            "name": "USDC -> Neg Risk Adapter",
-            "token": POLYGON_ADDRESSES["USDC"],
-            "spender": POLYGON_ADDRESSES["NEG_RISK_ADAPTER"],
-            "is_erc20": True,
-            "key": "neg_risk_adapter",
-            "type": "usdc",
-        })
+        approvals.append(
+            {
+                "name": "USDC -> Neg Risk Adapter",
+                "token": POLYGON_ADDRESSES["USDC"],
+                "spender": POLYGON_ADDRESSES["NEG_RISK_ADAPTER"],
+                "is_erc20": True,
+                "key": "neg_risk_adapter",
+                "type": "usdc",
+            }
+        )
     if not allowances.ctf_ctf_exchange:
-        approvals.append({
-            "name": "CTF -> CTF Exchange",
-            "token": POLYGON_ADDRESSES["CTF"],
-            "spender": POLYGON_ADDRESSES["CTF_EXCHANGE"],
-            "is_erc20": False,
-            "key": "ctf_exchange",
-            "type": "ctf",
-        })
+        approvals.append(
+            {
+                "name": "CTF -> CTF Exchange",
+                "token": POLYGON_ADDRESSES["CTF"],
+                "spender": POLYGON_ADDRESSES["CTF_EXCHANGE"],
+                "is_erc20": False,
+                "key": "ctf_exchange",
+                "type": "ctf",
+            }
+        )
     if not allowances.ctf_neg_risk_ctf_exchange:
-        approvals.append({
-            "name": "CTF -> Neg Risk CTF Exchange",
-            "token": POLYGON_ADDRESSES["CTF"],
-            "spender": POLYGON_ADDRESSES["NEG_RISK_CTF_EXCHANGE"],
-            "is_erc20": False,
-            "key": "neg_risk_ctf_exchange",
-            "type": "ctf",
-        })
+        approvals.append(
+            {
+                "name": "CTF -> Neg Risk CTF Exchange",
+                "token": POLYGON_ADDRESSES["CTF"],
+                "spender": POLYGON_ADDRESSES["NEG_RISK_CTF_EXCHANGE"],
+                "is_erc20": False,
+                "key": "neg_risk_ctf_exchange",
+                "type": "ctf",
+            }
+        )
     if not allowances.ctf_neg_risk_adapter:
-        approvals.append({
-            "name": "CTF -> Neg Risk Adapter",
-            "token": POLYGON_ADDRESSES["CTF"],
-            "spender": POLYGON_ADDRESSES["NEG_RISK_ADAPTER"],
-            "is_erc20": False,
-            "key": "neg_risk_adapter",
-            "type": "ctf",
-        })
+        approvals.append(
+            {
+                "name": "CTF -> Neg Risk Adapter",
+                "token": POLYGON_ADDRESSES["CTF"],
+                "spender": POLYGON_ADDRESSES["NEG_RISK_ADAPTER"],
+                "is_erc20": False,
+                "key": "neg_risk_adapter",
+                "type": "ctf",
+            }
+        )
 
     # Send each approval transaction
     for i, approval in enumerate(approvals):

@@ -4,6 +4,7 @@ import os
 
 from ..types import DomeSDKConfig
 from .activity_endpoints import ActivityEndpoints
+from .events_endpoints import EventsEndpoints
 from .market_endpoints import MarketEndpoints
 from .orders_endpoints import OrdersEndpoints
 from .polymarket_websocket import PolymarketWebSocketClient
@@ -25,6 +26,7 @@ class PolymarketClient:
             config: Configuration options for the SDK
         """
         self.markets = MarketEndpoints(config)
+        self.events = EventsEndpoints(config)
         self.wallet = WalletEndpoints(config)
         self.orders = OrdersEndpoints(config)
         self.activity = ActivityEndpoints(config)

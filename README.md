@@ -149,8 +149,9 @@ All Polymarket endpoints are accessed through `dome.polymarket.*`:
 |----------|--------|-------------|---------------|
 | **Markets** | `markets.get_market_price()` | Get current or historical market price by token ID | `/polymarket/market-price/{token_id}` |
 | **Markets** | `markets.get_candlesticks()` | Get historical candlestick data for a market | `/polymarket/candlesticks/{condition_id}` |
-| **Markets** | `markets.get_markets()` | Get market data with filtering (slug, tags, status, etc.) | `/polymarket/markets` |
+| **Markets** | `markets.get_markets()` | Get market data with filtering (slug, tags, search, status, etc.) | `/polymarket/markets` |
 | **Markets** | `markets.get_orderbooks()` | Get historical orderbook snapshots for an asset | `/polymarket/orderbooks` |
+| **Events** | `events.get_events()` | Get events (groups of related markets) with filtering | `/polymarket/events` |
 | **Orders** | `orders.get_orders()` | Get order data with filtering (market, user, time range, etc.) | `/polymarket/orders` |
 | **Trading** | `router.place_order()` | Place an order on Polymarket (requires PolymarketRouter) | `/polymarket/placeOrder` |
 | **WebSocket** | `websocket.subscribe()` | Subscribe to real-time order events via WebSocket (supports users, condition_ids, market_slugs filters) | `wss://ws.domeapi.io/{api_key}` |
@@ -260,6 +261,76 @@ markets_by_tags = dome.polymarket.markets.get_markets({
     "tags": ["crypto", "politics"],
     "status": "open"
 })
+
+# Search markets
+search_results = dome.polymarket.markets.get_markets({
+    "search": "bitcoin",
+    "limit": 20
+})
+
+# Pagination with pagination_key
+first_page = dome.polymarket.markets.get_markets({
+    "status": "open",
+    "limit": 20
+})
+if first_page.pagination.has_more:
+    next_page = dome.polymarket.markets.get_markets({
+        "status": "open",
+        "limit": 20,
+        "pagination_key": first_page.pagination.pagination_key
+    })
+    print(f"Next page: {len(next_page.markets)} markets")
+```
+
+### Events
+
+Get events (groups of related markets) with filtering:
+
+```python
+from dome_api_sdk import DomeClient
+
+dome = DomeClient({"api_key": "your-api-key"})
+
+# Get events by status
+events = dome.polymarket.events.get_events({
+    "status": "open",
+    "limit": 10
+})
+print(f"Events: {len(events.events)}")
+
+# Get event by slug with markets included
+event_detail = dome.polymarket.events.get_events({
+    "event_slug": "presidential-election-winner-2024",
+    "include_markets": "true"
+})
+# Returns event with markets array populated
+for event in event_detail.events:
+    print(f"Event: {event.title}")
+    if event.markets:
+        print(f"  Markets: {len(event.markets)}")
+
+# Get events by tags
+events_by_tags = dome.polymarket.events.get_events({
+    "tags": ["sports", "politics"],
+    "status": "open"
+})
+
+# Get events with time filters
+events_filtered = dome.polymarket.events.get_events({
+    "start_time": 1640995200,  # Event start time
+    "end_time": 1672531200,
+    "limit": 20
+})
+
+# Pagination with pagination_key
+first_page = dome.polymarket.events.get_events({
+    "limit": 10
+})
+if first_page.pagination.has_more:
+    next_page = dome.polymarket.events.get_events({
+        "limit": 10,
+        "pagination_key": first_page.pagination.pagination_key
+    })
 ```
 
 ### Orderbooks
@@ -293,7 +364,6 @@ dome = DomeClient({"api_key": "your-api-key"})
 orders = dome.polymarket.orders.get_orders({
     "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
     "limit": 50,
-    "offset": 0,
     "start_time": 1640995200,
     "end_time": 1672531200
 })
@@ -310,6 +380,17 @@ orders_array = dome.polymarket.orders.get_orders({
     "market_slug": ["slug1", "slug2"],
     "limit": 50
 })
+
+# Pagination with pagination_key
+first_page = dome.polymarket.orders.get_orders({
+    "limit": 50
+})
+if first_page.pagination.has_more:
+    next_page = dome.polymarket.orders.get_orders({
+        "limit": 50,
+        "pagination_key": first_page.pagination.pagination_key
+    })
+    print(f"Next page: {len(next_page.orders)} orders")
 ```
 
 ### WebSocket - Real-time Order Events
@@ -605,6 +686,22 @@ activity = dome.polymarket.activity.get_activity({
     "limit": 50
 })
 print(f"Activities: {len(activity.activities)}")
+
+# Get all activity (no user filter)
+all_activity = dome.polymarket.activity.get_activity({
+    "limit": 100
+})
+
+# Pagination with pagination_key
+first_page = dome.polymarket.activity.get_activity({
+    "limit": 50
+})
+if first_page.pagination.has_more:
+    next_page = dome.polymarket.activity.get_activity({
+        "limit": 50,
+        "pagination_key": first_page.pagination.pagination_key
+    })
+    print(f"Next page: {len(next_page.activities)} activities")
 ```
 
 ### Trading - Place Orders on Polymarket

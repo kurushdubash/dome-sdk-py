@@ -174,16 +174,26 @@ class MarketEndpoints(BaseClient):
             query_params["event_slug"] = params["event_slug"]
         if params.get("condition_id"):
             query_params["condition_id"] = params["condition_id"]
+        if params.get("token_id"):
+            query_params["token_id"] = params["token_id"]
         if params.get("tags"):
             query_params["tags"] = params["tags"]
+        if params.get("search"):
+            query_params["search"] = params["search"]
         if params.get("status"):
             query_params["status"] = params["status"]
         if params.get("min_volume") is not None:
             query_params["min_volume"] = params["min_volume"]
+        if params.get("start_time") is not None:
+            query_params["start_time"] = params["start_time"]
+        if params.get("end_time") is not None:
+            query_params["end_time"] = params["end_time"]
         if params.get("limit") is not None:
             query_params["limit"] = params["limit"]
         if params.get("offset") is not None:
             query_params["offset"] = params["offset"]
+        if params.get("pagination_key"):
+            query_params["pagination_key"] = params["pagination_key"]
 
         response_data = self._make_request(
             "GET",
@@ -246,9 +256,10 @@ class MarketEndpoints(BaseClient):
         pagination_data = response_data["pagination"]
         pagination = Pagination(
             limit=pagination_data["limit"],
-            offset=pagination_data["offset"],
+            offset=pagination_data.get("offset", 0),
             total=pagination_data["total"],
             has_more=pagination_data["has_more"],
+            pagination_key=pagination_data.get("pagination_key"),
         )
 
         return MarketsResponse(markets=markets, pagination=pagination)

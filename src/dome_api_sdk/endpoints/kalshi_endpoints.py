@@ -56,14 +56,16 @@ class KalshiEndpoints(BaseClient):
             query_params["market_ticker"] = params["market_ticker"]
         if params.get("event_ticker"):
             query_params["event_ticker"] = params["event_ticker"]
+        if params.get("search"):
+            query_params["search"] = params["search"]
         if params.get("status"):
             query_params["status"] = params["status"]
         if params.get("min_volume") is not None:
             query_params["min_volume"] = params["min_volume"]
         if params.get("limit") is not None:
             query_params["limit"] = params["limit"]
-        if params.get("offset") is not None:
-            query_params["offset"] = params["offset"]
+        if params.get("pagination_key"):
+            query_params["pagination_key"] = params["pagination_key"]
 
         response_data = self._make_request(
             "GET",
@@ -95,9 +97,10 @@ class KalshiEndpoints(BaseClient):
         pagination_data = response_data["pagination"]
         pagination = Pagination(
             limit=pagination_data["limit"],
-            offset=pagination_data["offset"],
+            offset=pagination_data.get("offset", 0),
             total=pagination_data["total"],
             has_more=pagination_data["has_more"],
+            pagination_key=pagination_data.get("pagination_key"),
         )
 
         return KalshiMarketsResponse(markets=markets, pagination=pagination)
@@ -246,8 +249,8 @@ class KalshiEndpoints(BaseClient):
             query_params["end_time"] = params["end_time"]
         if params.get("limit") is not None:
             query_params["limit"] = params["limit"]
-        if params.get("offset") is not None:
-            query_params["offset"] = params["offset"]
+        if params.get("pagination_key"):
+            query_params["pagination_key"] = params["pagination_key"]
 
         response_data = self._make_request(
             "GET",
@@ -279,9 +282,10 @@ class KalshiEndpoints(BaseClient):
         pagination_data = response_data["pagination"]
         pagination = Pagination(
             limit=pagination_data["limit"],
-            offset=pagination_data["offset"],
+            offset=pagination_data.get("offset", 0),
             total=pagination_data["total"],
             has_more=pagination_data["has_more"],
+            pagination_key=pagination_data.get("pagination_key"),
         )
 
         return KalshiTradesResponse(trades=trades, pagination=pagination)

@@ -212,7 +212,9 @@ class PolymarketRouter:
                     self._privy_client,
                     privy_wallet_id,
                     address,
-                    on_progress=lambda step, curr, total: print(f"   [{curr}/{total}] {step}..."),
+                    on_progress=lambda step, curr, total: print(
+                        f"   [{curr}/{total}] {step}..."
+                    ),
                     sponsor=sponsor_gas,
                 )
                 print("   Token allowances set")
@@ -344,12 +346,14 @@ class PolymarketRouter:
         }
 
         # Sign the message
-        signature = await signer.sign_typed_data({
-            "domain": domain,
-            "types": types,
-            "primaryType": "ClobAuth",
-            "message": message,
-        })
+        signature = await signer.sign_typed_data(
+            {
+                "domain": domain,
+                "types": types,
+                "primaryType": "ClobAuth",
+                "message": message,
+            }
+        )
 
         # Try to derive existing API key first
         try:
@@ -367,7 +371,11 @@ class PolymarketRouter:
 
             if response.status_code == 200:
                 result = response.json()
-                if result.get("apiKey") and result.get("secret") and result.get("passphrase"):
+                if (
+                    result.get("apiKey")
+                    and result.get("secret")
+                    and result.get("passphrase")
+                ):
                     print("   Successfully derived existing API credentials")
                     return {
                         "key": result["apiKey"],
@@ -399,7 +407,9 @@ class PolymarketRouter:
                     "passphrase": result["passphrase"],
                 }
             else:
-                raise Exception(f"Failed to create API key: {response.status_code} {response.text}")
+                raise Exception(
+                    f"Failed to create API key: {response.status_code} {response.text}"
+                )
 
         except Exception as e:
             raise Exception(f"Failed to obtain Polymarket API credentials: {e}")
@@ -453,7 +463,9 @@ class PolymarketRouter:
         # Auto-create signer if Privy wallet info provided
         actual_signer = signer
         if not actual_signer and privy_wallet_id and wallet_address:
-            actual_signer = self._create_privy_signer_from_wallet(privy_wallet_id, wallet_address)
+            actual_signer = self._create_privy_signer_from_wallet(
+                privy_wallet_id, wallet_address
+            )
 
         if not actual_signer:
             raise ValueError(
@@ -472,7 +484,11 @@ class PolymarketRouter:
         # Determine signature type and funder based on wallet type
         if wallet_type == "safe":
             signature_type = 2
-            funder = funder_address or self._user_safe_addresses.get(user_id) or signer_address
+            funder = (
+                funder_address
+                or self._user_safe_addresses.get(user_id)
+                or signer_address
+            )
 
             if not funder_address and not self._user_safe_addresses.get(user_id):
                 raise ValueError(
@@ -557,10 +573,14 @@ class PolymarketRouter:
         if "error" in server_response:
             error = server_response["error"]
             if isinstance(error, str):
-                raise Exception(f"Server error: {server_response.get('message', error)}")
+                raise Exception(
+                    f"Server error: {server_response.get('message', error)}"
+                )
             else:
                 reason = error.get("data", {}).get("reason", error.get("message"))
-                raise Exception(f"Order placement failed: {reason} (code: {error.get('code')})")
+                raise Exception(
+                    f"Order placement failed: {reason} (code: {error.get('code')})"
+                )
 
         if not response.is_success:
             raise Exception(
@@ -574,7 +594,11 @@ class PolymarketRouter:
 
         # Check for HTTP error status from Polymarket
         if isinstance(result.get("status"), int) and result["status"] >= 400:
-            error_message = result.get("errorMessage") or result.get("error") or f"Polymarket returned HTTP {result['status']}"
+            error_message = (
+                result.get("errorMessage")
+                or result.get("error")
+                or f"Polymarket returned HTTP {result['status']}"
+            )
             raise Exception(f"Order rejected by Polymarket: {error_message}")
 
         return result
@@ -600,16 +624,18 @@ class PolymarketRouter:
         import secrets
         import time
 
+        from py_clob_client.order_builder.builder import ROUNDING_CONFIG
+
         # Import py-clob-client utilities for proper order building
         from py_clob_client.order_builder.helpers import (
-            round_normal,
+            decimal_places,
             round_down,
+            round_normal,
             round_up,
             to_token_decimals,
-            decimal_places,
         )
-        from py_clob_client.order_builder.builder import ROUNDING_CONFIG
-        from py_order_utils.model import BUY as UtilsBuy, SELL as UtilsSell
+        from py_order_utils.model import BUY as UtilsBuy
+        from py_order_utils.model import SELL as UtilsSell
 
         # Get rounding config for the tick size
         round_config = ROUNDING_CONFIG.get(tick_size, ROUNDING_CONFIG["0.01"])
@@ -700,12 +726,14 @@ class PolymarketRouter:
         }
 
         # Sign the order
-        signature = await signer.sign_typed_data({
-            "domain": domain,
-            "types": types,
-            "primaryType": "Order",
-            "message": message,
-        })
+        signature = await signer.sign_typed_data(
+            {
+                "domain": domain,
+                "types": types,
+                "primaryType": "Order",
+                "message": message,
+            }
+        )
 
         return SignedPolymarketOrder(
             salt=salt,

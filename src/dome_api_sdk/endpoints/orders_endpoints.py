@@ -59,6 +59,8 @@ class OrdersEndpoints(BaseClient):
             query_params["limit"] = params["limit"]
         if params.get("offset") is not None:
             query_params["offset"] = params["offset"]
+        if params.get("pagination_key"):
+            query_params["pagination_key"] = params["pagination_key"]
         if params.get("user"):
             query_params["user"] = params["user"]
 
@@ -97,9 +99,10 @@ class OrdersEndpoints(BaseClient):
         pagination_data = response_data["pagination"]
         pagination = Pagination(
             limit=pagination_data["limit"],
-            offset=pagination_data["offset"],
+            offset=pagination_data.get("offset", 0),
             total=pagination_data["total"],
             has_more=pagination_data["has_more"],
+            pagination_key=pagination_data.get("pagination_key"),
         )
 
         return OrdersResponse(
