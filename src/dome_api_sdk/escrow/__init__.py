@@ -1,13 +1,17 @@
 """Dome Fee Escrow Module.
 
-This module provides functionality for fee authorization with the Dome Fee Escrow contract.
+This module provides functionality for fee authorization with the Dome Fee Escrow contracts.
+
+Supports two contracts:
+1. DomeFeeEscrow (v1/MVP) - Single fee amount
+2. DomeFeeEscrow (v2) - Independent dome and affiliate fees for order and performance fees
 
 Key components:
 - Order ID generation (deterministic, collision-resistant)
 - Fee authorization creation and signing (EIP-712)
 - Utility functions for USDC formatting
 
-Example usage:
+Example usage (v1/MVP - DomeFeeEscrow):
     ```python
     from dome_api_sdk.escrow import (
         generate_order_id,
@@ -45,8 +49,45 @@ Example usage:
         chain_id=137,
     )
     ```
+
+Example usage (v2 - DomeFeeEscrow):
+    ```python
+    from dome_api_sdk.escrow import DomeFeeEscrowClient
+
+    # Create client
+    client = DomeFeeEscrowClient(
+        escrow_address="0x...",  # DomeFeeEscrow address
+        chain_id=137,
+    )
+
+    # Sign order fee authorization (with independent dome + affiliate fees)
+    auth, signature = client.sign_order_fee_auth(
+        private_key="0x...",
+        order_id="0x...",
+        dome_amount=25000,      # $0.025 USDC to Dome
+        affiliate_amount=5000,  # $0.005 USDC to Affiliate
+    )
+
+    # Sign performance fee authorization
+    auth, signature = client.sign_performance_fee_auth(
+        private_key="0x...",
+        position_id="0x...",
+        expected_winnings=100_000_000,  # $100
+        dome_amount=500_000,            # $0.50 (5% of winnings)
+        affiliate_amount=100_000,       # $0.10 (1% of winnings)
+    )
+
+    # Calculate fees
+    fees = client.calculate_order_fees(
+        order_size=10_000_000,  # $10 USDC
+        dome_fee_bps=25,        # 0.25%
+        affiliate_fee_bps=5,    # 0.05%
+    )
+    print(f"Total fee: ${fees.total_fee / 1_000_000}")
+    ```
 """
 
+# v1/MVP DomeFeeEscrow types and functions
 from .types import (
     OrderParams,
     FeeAuthorization,
@@ -73,7 +114,38 @@ from .utils import (
     calculate_order_size_usdc,
 )
 
+# v2 DomeFeeEscrow types and functions
+from .dome_types import (
+    OrderFeeAuthorization,
+    SignedOrderFeeAuthorization,
+    PerformanceFeeAuthorization,
+    SignedPerformanceFeeAuthorization,
+    ORDER_FEE_AUTHORIZATION_TYPES,
+    PERFORMANCE_FEE_AUTHORIZATION_TYPES,
+    CalculatedFees,
+    EscrowStatus,
+    RemainingEscrow,
+)
+from .dome_signing import (
+    create_eip712_domain as create_dome_eip712_domain,
+    create_order_fee_authorization,
+    create_performance_fee_authorization,
+    sign_order_fee_authorization,
+    sign_performance_fee_authorization,
+    sign_order_fee_authorization_with_signer,
+    sign_performance_fee_authorization_with_signer,
+    verify_order_fee_authorization_signature,
+    verify_performance_fee_authorization_signature,
+    MIN_ORDER_FEE,
+    MIN_PERF_FEE,
+    MAX_FEE_ABSOLUTE,
+    MAX_ORDER_FEE_BPS,
+    MAX_PERF_FEE_BPS,
+)
+from .dome_client import DomeFeeEscrowClient
+
 __all__ = [
+    # ============ v1/MVP DomeFeeEscrow ============
     # Types
     "OrderParams",
     "FeeAuthorization",
@@ -84,7 +156,7 @@ __all__ = [
     "generate_order_id",
     "verify_order_id",
     # Signing
-    "create_eip712_domain",
+    "create_dome_eip712_domain",
     "create_fee_authorization",
     "sign_fee_authorization",
     "sign_fee_authorization_with_signer",
@@ -98,4 +170,33 @@ __all__ = [
     "format_bps",
     "calculate_fee",
     "calculate_order_size_usdc",
+    # ============ v2 DomeFeeEscrow ============
+    # Client
+    "DomeFeeEscrowClient",
+    # Types
+    "OrderFeeAuthorization",
+    "SignedOrderFeeAuthorization",
+    "PerformanceFeeAuthorization",
+    "SignedPerformanceFeeAuthorization",
+    "ORDER_FEE_AUTHORIZATION_TYPES",
+    "PERFORMANCE_FEE_AUTHORIZATION_TYPES",
+    "CalculatedFees",
+    "EscrowStatus",
+    "RemainingEscrow",
+    # Signing functions
+    "create_dome_eip712_domain",
+    "create_order_fee_authorization",
+    "create_performance_fee_authorization",
+    "sign_order_fee_authorization",
+    "sign_performance_fee_authorization",
+    "sign_order_fee_authorization_with_signer",
+    "sign_performance_fee_authorization_with_signer",
+    "verify_order_fee_authorization_signature",
+    "verify_performance_fee_authorization_signature",
+    # Constants
+    "MIN_ORDER_FEE",
+    "MIN_PERF_FEE",
+    "MAX_FEE_ABSOLUTE",
+    "MAX_ORDER_FEE_BPS",
+    "MAX_PERF_FEE_BPS",
 ]

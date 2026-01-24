@@ -64,7 +64,7 @@ from .router import (
     EscrowConfig,
 )
 
-# Escrow module
+# Escrow module (v1/MVP - DomeFeeEscrow)
 from .escrow import (
     OrderParams,
     FeeAuthorization,
@@ -84,6 +84,34 @@ from .escrow import (
     format_bps,
     calculate_fee,
     calculate_order_size_usdc,
+)
+
+# Escrow module (v2 - UnifiedFeeEscrow)
+from .escrow import (
+    DomeFeeEscrowClient,
+    OrderFeeAuthorization,
+    SignedOrderFeeAuthorization,
+    PerformanceFeeAuthorization,
+    SignedPerformanceFeeAuthorization,
+    ORDER_FEE_AUTHORIZATION_TYPES,
+    PERFORMANCE_FEE_AUTHORIZATION_TYPES,
+    CalculatedFees,
+    EscrowStatus,
+    RemainingEscrow,
+    create_dome_eip712_domain,
+    create_order_fee_authorization,
+    create_performance_fee_authorization,
+    sign_order_fee_authorization,
+    sign_performance_fee_authorization,
+    sign_order_fee_authorization_with_signer,
+    sign_performance_fee_authorization_with_signer,
+    verify_order_fee_authorization_signature,
+    verify_performance_fee_authorization_signature,
+    MIN_ORDER_FEE,
+    MIN_PERF_FEE,
+    MAX_FEE_ABSOLUTE,
+    MAX_ORDER_FEE_BPS,
+    MAX_PERF_FEE_BPS,
 )
 from .types import (
     ActiveSubscription,
@@ -307,7 +335,7 @@ __all__ = [
     "PolymarketRouterWithEscrowConfig",
     "PlaceOrderWithEscrowParams",
     "EscrowConfig",
-    # Escrow
+    # Escrow (v1/MVP - DomeFeeEscrow)
     "OrderParams",
     "FeeAuthorization",
     "SignedFeeAuthorization",
@@ -326,6 +354,31 @@ __all__ = [
     "format_bps",
     "calculate_fee",
     "calculate_order_size_usdc",
+    # Escrow (v2 - UnifiedFeeEscrow)
+    "DomeFeeEscrowClient",
+    "OrderFeeAuthorization",
+    "SignedOrderFeeAuthorization",
+    "PerformanceFeeAuthorization",
+    "SignedPerformanceFeeAuthorization",
+    "ORDER_FEE_AUTHORIZATION_TYPES",
+    "PERFORMANCE_FEE_AUTHORIZATION_TYPES",
+    "CalculatedFees",
+    "EscrowStatus",
+    "RemainingEscrow",
+    "create_dome_eip712_domain",
+    "create_order_fee_authorization",
+    "create_performance_fee_authorization",
+    "sign_order_fee_authorization",
+    "sign_performance_fee_authorization",
+    "sign_order_fee_authorization_with_signer",
+    "sign_performance_fee_authorization_with_signer",
+    "verify_order_fee_authorization_signature",
+    "verify_performance_fee_authorization_signature",
+    "MIN_ORDER_FEE",
+    "MIN_PERF_FEE",
+    "MAX_FEE_ABSOLUTE",
+    "MAX_ORDER_FEE_BPS",
+    "MAX_PERF_FEE_BPS",
     # Utilities
     "PrivyClient",
     "RouterSigner",
