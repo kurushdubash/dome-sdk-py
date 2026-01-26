@@ -86,7 +86,7 @@ from .escrow import (
     calculate_order_size_usdc,
 )
 
-# Escrow module (v2 - UnifiedFeeEscrow)
+# Escrow module (v2 - DomeFeeEscrow)
 from .escrow import (
     DomeFeeEscrowClient,
     OrderFeeAuthorization,
@@ -354,7 +354,7 @@ __all__ = [
     "format_bps",
     "calculate_fee",
     "calculate_order_size_usdc",
-    # Escrow (v2 - UnifiedFeeEscrow)
+    # Escrow (v2 - DomeFeeEscrow)
     "DomeFeeEscrowClient",
     "OrderFeeAuthorization",
     "SignedOrderFeeAuthorization",

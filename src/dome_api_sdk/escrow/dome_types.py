@@ -1,4 +1,4 @@
-"""Unified Fee Escrow Types.
+"""DomeFeeEscrow Types.
 
 User-facing types for the DomeFeeEscrow contract that supports both
 order fees and performance fees with independent dome and affiliate fee amounts.

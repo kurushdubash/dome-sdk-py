@@ -1,4 +1,4 @@
-"""Unified Fee Escrow Signing.
+"""DomeFeeEscrow Signing.
 
 Provides EIP-712 signing functions for the DomeFeeEscrow contract that supports
 both order fees and performance fees with independent dome and affiliate amounts.
@@ -50,7 +50,7 @@ def create_eip712_domain(escrow_address: str, chain_id: int) -> EIP712Domain:
     """Create EIP-712 domain for the DomeFeeEscrow contract.
 
     Args:
-        escrow_address: Address of the unified escrow contract
+        escrow_address: Address of the DomeFeeEscrow contract
         chain_id: Chain ID (137 for Polygon)
 
     Returns:
@@ -207,7 +207,7 @@ def sign_order_fee_authorization(
 
     Args:
         private_key: Private key (hex string with or without 0x prefix)
-        escrow_address: Address of the unified escrow contract
+        escrow_address: Address of the DomeFeeEscrow contract
         auth: Order fee authorization to sign
 
     Returns:
@@ -268,7 +268,7 @@ def sign_performance_fee_authorization(
 
     Args:
         private_key: Private key (hex string with or without 0x prefix)
-        escrow_address: Address of the unified escrow contract
+        escrow_address: Address of the DomeFeeEscrow contract
         auth: Performance fee authorization to sign
 
     Returns:
@@ -351,7 +351,7 @@ async def sign_order_fee_authorization_with_signer(
 
     Args:
         signer: Signer that implements TypedDataSigner protocol
-        escrow_address: Address of the unified escrow contract
+        escrow_address: Address of the DomeFeeEscrow contract
         auth: Order fee authorization to sign
 
     Returns:
@@ -400,7 +400,7 @@ async def sign_performance_fee_authorization_with_signer(
 
     Args:
         signer: Signer that implements TypedDataSigner protocol
-        escrow_address: Address of the unified escrow contract
+        escrow_address: Address of the DomeFeeEscrow contract
         auth: Performance fee authorization to sign
 
     Returns:
@@ -451,7 +451,7 @@ def verify_order_fee_authorization_signature(
 
     Args:
         signed_auth: Signed order fee authorization
-        escrow_address: Address of the unified escrow contract
+        escrow_address: Address of the DomeFeeEscrow contract
         expected_signer: Expected signer address
 
     Returns:
@@ -508,7 +508,7 @@ def verify_performance_fee_authorization_signature(
 
     Args:
         signed_auth: Signed performance fee authorization
-        escrow_address: Address of the unified escrow contract
+        escrow_address: Address of the DomeFeeEscrow contract
         expected_signer: Expected signer address
 
     Returns:

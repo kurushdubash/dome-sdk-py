@@ -1,4 +1,4 @@
-"""Unified Fee Escrow Client.
+"""DomeFeeEscrow Client.
 
 High-level client for interacting with the DomeFeeEscrow contract.
 Provides methods for:

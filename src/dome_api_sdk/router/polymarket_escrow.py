@@ -22,12 +22,13 @@ from .polymarket import PolymarketRouter
 from ..escrow import (
     OrderParams,
     generate_order_id,
-    create_fee_authorization,
-    sign_fee_authorization_with_signer,
+    create_order_fee_authorization,
+    sign_order_fee_authorization_with_signer,
     calculate_fee,
     calculate_order_size_usdc,
-    ESCROW_CONTRACT_POLYGON,
+    ESCROW_CONTRACT_V2_POLYGON,
     ZERO_ADDRESS,
+    MIN_ORDER_FEE,
 )
 from ..types import (
     PlaceOrderParams,
@@ -133,12 +134,12 @@ class PolymarketRouterWithEscrow(PolymarketRouter):
         config = config or {}
         super().__init__(config)
 
-        # Set escrow defaults
+        # Set escrow defaults (V2 contract)
         escrow_config = config.get("escrow", {})
         self._escrow_config = ResolvedEscrowConfig(
             fee_bps=escrow_config.get("fee_bps", 25),  # 0.25%
             escrow_address=escrow_config.get(
-                "escrow_address", ESCROW_CONTRACT_POLYGON
+                "escrow_address", ESCROW_CONTRACT_V2_POLYGON
             ),
             chain_id=escrow_config.get("chain_id", 137),
             affiliate=escrow_config.get("affiliate", ZERO_ADDRESS),
@@ -229,7 +230,22 @@ class PolymarketRouterWithEscrow(PolymarketRouter):
 
         # Calculate order size in USDC and fee
         order_size_usdc = calculate_order_size_usdc(size, price)
-        fee_amount = calculate_fee(order_size_usdc, fee_bps)
+        total_fee = calculate_fee(order_size_usdc, fee_bps)
+
+        # V2: Split fee between dome and affiliate
+        # If affiliate specified: 80% dome, 20% affiliate
+        # Otherwise: 100% dome
+        if affiliate != ZERO_ADDRESS:
+            # 80/20 split
+            affiliate_amount = (total_fee * 20) // 100
+            dome_amount = total_fee - affiliate_amount
+        else:
+            dome_amount = total_fee
+            affiliate_amount = 0
+
+        # Ensure minimum fee is met
+        if dome_amount + affiliate_amount < MIN_ORDER_FEE:
+            dome_amount = MIN_ORDER_FEE
 
         # Generate unique orderId
         timestamp = int(time.time() * 1000)
@@ -245,20 +261,21 @@ class PolymarketRouterWithEscrow(PolymarketRouter):
             )
         )
 
-        # Create fee authorization
-        fee_auth = create_fee_authorization(
+        # Create V2 order fee authorization
+        order_fee_auth = create_order_fee_authorization(
             order_id=order_id,
             payer=payer_address,
-            fee_amount=fee_amount,
+            dome_amount=dome_amount,
+            affiliate_amount=affiliate_amount,
+            chain_id=self._escrow_config.chain_id,
             deadline_seconds=self._escrow_config.deadline_seconds,
         )
 
-        # Sign fee authorization
-        signed_fee_auth = await sign_fee_authorization_with_signer(
+        # Sign V2 fee authorization
+        signed_fee_auth = await sign_order_fee_authorization_with_signer(
             signer=actual_signer,
             escrow_address=self._escrow_config.escrow_address,
-            fee_auth=fee_auth,
-            chain_id=self._escrow_config.chain_id,
+            auth=order_fee_auth,
         )
 
         # Create signed order using parent's logic
@@ -309,11 +326,13 @@ class PolymarketRouterWithEscrow(PolymarketRouter):
                     "apiPassphrase": creds.api_passphrase,
                 },
                 "clientOrderId": client_order_id,
-                "feeAuth": {
+                "orderFeeAuth": {
                     "orderId": signed_fee_auth.order_id,
                     "payer": signed_fee_auth.payer,
-                    "feeAmount": str(signed_fee_auth.fee_amount),
-                    "deadline": signed_fee_auth.deadline,  # Must be number
+                    "domeAmount": str(signed_fee_auth.dome_amount),
+                    "affiliateAmount": str(signed_fee_auth.affiliate_amount),
+                    "chainId": signed_fee_auth.chain_id,
+                    "deadline": signed_fee_auth.deadline,
                     "signature": signed_fee_auth.signature,
                 },
             },

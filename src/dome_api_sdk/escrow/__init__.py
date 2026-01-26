@@ -106,6 +106,7 @@ from .signing import (
 from .utils import (
     USDC_POLYGON,
     ESCROW_CONTRACT_POLYGON,
+    ESCROW_CONTRACT_V2_POLYGON,
     ZERO_ADDRESS,
     format_usdc,
     parse_usdc,
@@ -164,6 +165,7 @@ __all__ = [
     # Utils
     "USDC_POLYGON",
     "ESCROW_CONTRACT_POLYGON",
+    "ESCROW_CONTRACT_V2_POLYGON",
     "ZERO_ADDRESS",
     "format_usdc",
     "parse_usdc",

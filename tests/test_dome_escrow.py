@@ -1,4 +1,4 @@
-"""Tests for the Unified Fee Escrow module (v2).
+"""Tests for the DomeFeeEscrow module (v2).
 
 Tests for OrderFeeAuthorization and PerformanceFeeAuthorization
 with independent dome and affiliate fees.
@@ -49,7 +49,7 @@ TEST_ESCROW_ADDRESS = "0x1234567890123456789012345678901234567890"
 TEST_CHAIN_ID = 137
 
 
-class TestUnifiedEIP712Domain:
+class TestDomeFeeEscrowEIP712Domain:
     """Tests for EIP-712 domain creation."""
 
     def test_create_dome_eip712_domain(self):
