@@ -326,9 +326,10 @@ class PolymarketRouterWithEscrow(PolymarketRouter):
                     "apiPassphrase": creds.api_passphrase,
                 },
                 "clientOrderId": client_order_id,
-                "orderFeeAuth": {
+                "feeAuth": {
                     "orderId": signed_fee_auth.order_id,
                     "payer": signed_fee_auth.payer,
+                    "feeAmount": str(signed_fee_auth.dome_amount + signed_fee_auth.affiliate_amount),
                     "domeAmount": str(signed_fee_auth.dome_amount),
                     "affiliateAmount": str(signed_fee_auth.affiliate_amount),
                     "chainId": signed_fee_auth.chain_id,
