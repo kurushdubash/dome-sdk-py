@@ -126,6 +126,12 @@ from .dome_types import (
     CalculatedFees,
     EscrowStatus,
     RemainingEscrow,
+    ClaimWinningsResult,
+)
+from .ctf import (
+    CTF_CONTRACT_ADDRESS,
+    build_redeem_positions_calldata,
+    build_redeem_positions_tx,
 )
 from .dome_signing import (
     create_eip712_domain as create_dome_eip712_domain,
@@ -201,4 +207,10 @@ __all__ = [
     "MAX_FEE_ABSOLUTE",
     "MAX_ORDER_FEE_BPS",
     "MAX_PERF_FEE_BPS",
+    # Claim Winnings
+    "ClaimWinningsResult",
+    # CTF utilities
+    "CTF_CONTRACT_ADDRESS",
+    "build_redeem_positions_calldata",
+    "build_redeem_positions_tx",
 ]

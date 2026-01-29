@@ -5,7 +5,7 @@ order fees and performance fees with independent dome and affiliate fee amounts.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, TypedDict
+from typing import Dict, List, Optional, TypedDict
 
 
 @dataclass
@@ -215,3 +215,59 @@ class RemainingEscrow:
     perf_fee_dome_remaining: int
     perf_fee_affiliate_remaining: int
     total_remaining: int
+
+
+@dataclass
+class ClaimWinningsResult:
+    """Result from a successful claim winnings request.
+
+    Returned by PolymarketRouterWithEscrow.claim_winnings().
+    Field names use snake_case in Python; the server returns camelCase JSON
+    which is converted automatically.
+
+    Attributes:
+        success: Whether the claim was successful
+        position_id: Position identifier (bytes32 hex string)
+        wallet_type: Wallet type used for the claim ('eoa' or 'privy')
+        status: Final status ('completed' or 'failed')
+        fee_pulled: Whether the performance fee was pulled from escrow
+        dome_amount: Dome's fee amount in USDC (string)
+        affiliate_amount: Affiliate's fee amount in USDC (string)
+        pull_fee_tx_hash: Transaction hash for the fee pull
+        distribute_tx_hash: Transaction hash for fee distribution
+        redeemed: Whether the CTF positions were redeemed
+        claim_tx_hash: Transaction hash for the redeem/claim
+    """
+
+    success: bool
+    """Whether the claim was successful."""
+
+    position_id: str
+    """Position identifier (bytes32 hex string)."""
+
+    wallet_type: str
+    """Wallet type used for the claim ('eoa' or 'privy')."""
+
+    status: str
+    """Final status ('completed' or 'failed')."""
+
+    fee_pulled: Optional[bool] = None
+    """Whether the performance fee was pulled from escrow."""
+
+    dome_amount: Optional[str] = None
+    """Dome's fee amount in USDC (string)."""
+
+    affiliate_amount: Optional[str] = None
+    """Affiliate's fee amount in USDC (string)."""
+
+    pull_fee_tx_hash: Optional[str] = None
+    """Transaction hash for the fee pull."""
+
+    distribute_tx_hash: Optional[str] = None
+    """Transaction hash for fee distribution."""
+
+    redeemed: Optional[bool] = None
+    """Whether the CTF positions were redeemed."""
+
+    claim_tx_hash: Optional[str] = None
+    """Transaction hash for the redeem/claim."""

@@ -98,6 +98,7 @@ from .escrow import (
     CalculatedFees,
     EscrowStatus,
     RemainingEscrow,
+    ClaimWinningsResult,
     create_dome_eip712_domain,
     create_order_fee_authorization,
     create_performance_fee_authorization,
@@ -112,6 +113,9 @@ from .escrow import (
     MAX_FEE_ABSOLUTE,
     MAX_ORDER_FEE_BPS,
     MAX_PERF_FEE_BPS,
+    CTF_CONTRACT_ADDRESS,
+    build_redeem_positions_calldata,
+    build_redeem_positions_tx,
 )
 from .types import (
     ActiveSubscription,
@@ -379,6 +383,12 @@ __all__ = [
     "MAX_FEE_ABSOLUTE",
     "MAX_ORDER_FEE_BPS",
     "MAX_PERF_FEE_BPS",
+    # Claim Winnings
+    "ClaimWinningsResult",
+    # CTF utilities
+    "CTF_CONTRACT_ADDRESS",
+    "build_redeem_positions_calldata",
+    "build_redeem_positions_tx",
     # Utilities
     "PrivyClient",
     "RouterSigner",
