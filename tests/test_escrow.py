@@ -18,6 +18,12 @@ from src.dome_api_sdk.escrow import (
     calculate_fee,
     calculate_order_size_usdc,
     ESCROW_CONTRACT_POLYGON,
+    # V2 imports
+    DomeFeeEscrowClient,
+    OrderFeeAuthorization,
+    SignedOrderFeeAuthorization,
+    CalculatedFees,
+    MIN_ORDER_FEE,
 )
 
 
@@ -357,6 +363,162 @@ class TestIntegration:
         print(f"  Fee: ${format_usdc(fee_amount)} USDC")
         print(f"  Deadline: {fee_auth.deadline}")
         print(f"  Signature: {signed.signature[:20]}...")
+
+
+class TestDomeFeeEscrowClientOrderFees:
+    """Tests for DomeFeeEscrowClient order fee signing (V2 split model)."""
+
+    def setup_method(self):
+        self.client = DomeFeeEscrowClient(
+            escrow_address=ESCROW_CONTRACT_POLYGON,
+            chain_id=137,
+        )
+
+    def test_sign_order_fee_auth(self):
+        """Test order fee auth signing with split dome/affiliate amounts."""
+        order_id = "0x" + "ab" * 32
+        dome_amount = 200_000  # $0.20
+        affiliate_amount = 50_000  # $0.05
+
+        auth, signature = self.client.sign_order_fee_auth(
+            private_key=TEST_PRIVATE_KEY,
+            order_id=order_id,
+            dome_amount=dome_amount,
+            affiliate_amount=affiliate_amount,
+        )
+
+        assert isinstance(auth, OrderFeeAuthorization)
+        assert auth.order_id == order_id
+        assert auth.dome_amount == dome_amount
+        assert auth.affiliate_amount == affiliate_amount
+        assert auth.chain_id == 137
+        assert auth.deadline > int(time.time())
+        assert len(signature) > 0
+
+    def test_sign_and_verify_order_fee_auth(self):
+        """Test round-trip: sign then verify order fee auth."""
+        order_id = "0x" + "cd" * 32
+
+        auth, signature = self.client.sign_order_fee_auth(
+            private_key=TEST_PRIVATE_KEY,
+            order_id=order_id,
+            dome_amount=140_000,
+            affiliate_amount=35_000,
+        )
+
+        signed_auth = SignedOrderFeeAuthorization(
+            order_id=auth.order_id,
+            payer=auth.payer,
+            dome_amount=auth.dome_amount,
+            affiliate_amount=auth.affiliate_amount,
+            chain_id=auth.chain_id,
+            deadline=auth.deadline,
+            signature=signature,
+        )
+
+        assert self.client.verify_order_fee_signature(
+            signed_auth=signed_auth,
+            expected_signer=TEST_ADDRESS,
+        ) is True
+
+        # Wrong signer should fail
+        wrong_address = Account.create().address
+        assert self.client.verify_order_fee_signature(
+            signed_auth=signed_auth,
+            expected_signer=wrong_address,
+        ) is False
+
+    def test_calculate_order_fees_split(self):
+        """Test V2 fee calculation with split dome/affiliate amounts."""
+        order_size = 100_000_000  # $100
+        fees = DomeFeeEscrowClient.calculate_order_fees(
+            order_size=order_size,
+            dome_fee_bps=20,
+            affiliate_fee_bps=5,
+        )
+
+        assert isinstance(fees, CalculatedFees)
+        assert fees.dome_fee == 200_000  # $0.20 (20 bps)
+        assert fees.affiliate_fee == 50_000  # $0.05 (5 bps)
+        assert fees.total_fee == 250_000  # $0.25 total
+
+    def test_calculate_order_fees_minimum_applied(self):
+        """Test that minimum fee floor is enforced."""
+        # Very small order where calculated fee < MIN_ORDER_FEE
+        order_size = 10_000  # $0.01
+        fees = DomeFeeEscrowClient.calculate_order_fees(
+            order_size=order_size,
+            dome_fee_bps=20,
+            affiliate_fee_bps=5,
+        )
+
+        # Total should be at least MIN_ORDER_FEE
+        assert fees.total_fee >= MIN_ORDER_FEE
+
+
+class TestDomeFeeEscrowClientIntegration:
+    """Integration tests for the full V2 escrow flow."""
+
+    def test_full_v2_flow(self):
+        """Test complete V2 flow: order ID -> split fees -> sign -> verify."""
+        # 1. Generate order ID
+        timestamp = int(time.time() * 1000)
+        params = OrderParams(
+            user_address=TEST_ADDRESS,
+            market_id="12345678901234567890",
+            side="buy",
+            size=calculate_order_size_usdc(50, 0.70),  # 50 shares @ $0.70 = $35
+            price=0.70,
+            timestamp=timestamp,
+            chain_id=137,
+        )
+        order_id = generate_order_id(params)
+
+        # 2. Calculate split fees
+        fees = DomeFeeEscrowClient.calculate_order_fees(
+            order_size=params.size,
+            dome_fee_bps=20,
+            affiliate_fee_bps=5,
+        )
+        assert fees.dome_fee > 0
+        assert fees.affiliate_fee > 0
+
+        # 3. Sign with DomeFeeEscrowClient
+        client = DomeFeeEscrowClient(
+            escrow_address=ESCROW_CONTRACT_POLYGON,
+            chain_id=137,
+        )
+
+        auth, signature = client.sign_order_fee_auth(
+            private_key=TEST_PRIVATE_KEY,
+            order_id=order_id,
+            dome_amount=fees.dome_fee,
+            affiliate_amount=fees.affiliate_fee,
+        )
+
+        # 4. Verify
+        assert verify_order_id(order_id, params)
+
+        signed_auth = SignedOrderFeeAuthorization(
+            order_id=auth.order_id,
+            payer=auth.payer,
+            dome_amount=auth.dome_amount,
+            affiliate_amount=auth.affiliate_amount,
+            chain_id=auth.chain_id,
+            deadline=auth.deadline,
+            signature=signature,
+        )
+        assert client.verify_order_fee_signature(
+            signed_auth=signed_auth,
+            expected_signer=TEST_ADDRESS,
+        )
+
+        print(f"\nV2 full flow test passed:")
+        print(f"  Order ID: {order_id[:20]}...")
+        print(f"  Dome fee: ${format_usdc(fees.dome_fee)} USDC")
+        print(f"  Affiliate fee: ${format_usdc(fees.affiliate_fee)} USDC")
+        print(f"  Deadline: {auth.deadline}")
+        print(f"  Signature: {signature[:20]}...")
 
 
 if __name__ == "__main__":

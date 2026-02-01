@@ -48,7 +48,7 @@ async def main() -> None:
         DomeFeeEscrowClient,
         build_redeem_positions_tx,
         format_usdc,
-        ESCROW_CONTRACT_V2_POLYGON,
+        ESCROW_CONTRACT_POLYGON,
     )
     from dome_api_sdk.escrow import MIN_PERF_FEE
 
@@ -85,11 +85,11 @@ async def main() -> None:
     print("\n[2] Setting up escrow client...")
 
     escrow_client = DomeFeeEscrowClient(
-        escrow_address=ESCROW_CONTRACT_V2_POLYGON,
+        escrow_address=ESCROW_CONTRACT_POLYGON,
         chain_id=chain_id,
     )
 
-    print(f"  Escrow contract: {ESCROW_CONTRACT_V2_POLYGON}")
+    print(f"  Escrow contract: {ESCROW_CONTRACT_POLYGON}")
 
     # -- [3] Calculate performance fees ------------------------------------
     print("\n[3] Calculating performance fees (local)...")

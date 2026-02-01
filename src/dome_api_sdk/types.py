@@ -131,11 +131,13 @@ class DomeSDKConfig(TypedDict, total=False):
 
     Attributes:
         api_key: Authentication token for API requests
-        base_url: Base URL for the API (defaults to https://api.domeapi.io/v1)
+        api_url: Dome API URL (defaults to https://api.domeapi.io/v1)
+        base_url: Deprecated alias for api_url
         timeout: Request timeout in seconds (defaults to 30)
     """
 
     api_key: Optional[str]
+    api_url: Optional[str]
     base_url: Optional[str]
     timeout: Optional[float]
 

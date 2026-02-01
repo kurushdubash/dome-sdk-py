@@ -26,7 +26,7 @@ from ..escrow import (
     sign_order_fee_authorization_with_signer,
     calculate_fee,
     calculate_order_size_usdc,
-    ESCROW_CONTRACT_V2_POLYGON,
+    ESCROW_CONTRACT_POLYGON,
     ZERO_ADDRESS,
     MIN_ORDER_FEE,
 )
@@ -140,7 +140,7 @@ class PolymarketRouterWithEscrow(PolymarketRouter):
         self._escrow_config = ResolvedEscrowConfig(
             fee_bps=escrow_config.get("fee_bps", 25),  # 0.25%
             escrow_address=escrow_config.get(
-                "escrow_address", ESCROW_CONTRACT_V2_POLYGON
+                "escrow_address", ESCROW_CONTRACT_POLYGON
             ),
             chain_id=escrow_config.get("chain_id", 137),
             affiliate=escrow_config.get("affiliate", ZERO_ADDRESS),

@@ -47,7 +47,7 @@ async def main() -> None:
         DomeFeeEscrowClient,
         create_privy_signer_from_env,
         format_usdc,
-        ESCROW_CONTRACT_V2_POLYGON,
+        ESCROW_CONTRACT_POLYGON,
     )
 
     print("=== Privy Server Wallet -- Claim Winnings with Performance Fee ===\n")
@@ -90,11 +90,11 @@ async def main() -> None:
     signer = create_privy_signer_from_env()
 
     escrow_client = DomeFeeEscrowClient(
-        escrow_address=ESCROW_CONTRACT_V2_POLYGON,
+        escrow_address=ESCROW_CONTRACT_POLYGON,
         chain_id=chain_id,
     )
 
-    print(f"  Escrow contract: {ESCROW_CONTRACT_V2_POLYGON}")
+    print(f"  Escrow contract: {ESCROW_CONTRACT_POLYGON}")
     print("  Privy signer initialized")
 
     # -- [3] Calculate performance fees ------------------------------------
