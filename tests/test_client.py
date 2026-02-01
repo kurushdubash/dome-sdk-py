@@ -22,7 +22,7 @@ class TestDomeClient:
         """Test DomeClient constructor with custom configuration."""
         config = {
             "api_key": "test-api-key",
-            "api_url": "https://test.api.com",
+            "api_url": "https://api.domeapi.io/v1",
             "timeout": 60.0,
         }
         client = DomeClient(config)
