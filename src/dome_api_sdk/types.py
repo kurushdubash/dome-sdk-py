@@ -120,6 +120,11 @@ __all__ = [
     "SignedPolymarketOrder",
     "ServerPlaceOrderResult",
     "ServerPlaceOrderError",
+    # Cancel Order
+    "CancelOrderParams",
+    "ClobCancelResult",
+    "EscrowRefundInfo",
+    "ServerCancelOrderResult",
 ]
 
 # Type aliases
@@ -131,11 +136,13 @@ class DomeSDKConfig(TypedDict, total=False):
 
     Attributes:
         api_key: Authentication token for API requests
-        base_url: Base URL for the API (defaults to https://api.domeapi.io/v1)
+        api_url: Dome API URL (defaults to https://api.domeapi.io/v1)
+        base_url: Deprecated alias for api_url
         timeout: Request timeout in seconds (defaults to 30)
     """
 
     api_key: Optional[str]
+    api_url: Optional[str]
     base_url: Optional[str]
     timeout: Optional[float]
 
@@ -1820,3 +1827,68 @@ class ServerPlaceOrderError:
     code: int
     message: str
     data: Optional[Dict[str, any]] = None
+
+
+class CancelOrderParams(TypedDict, total=False):
+    """Parameters for canceling an order.
+
+    Attributes:
+        order_id: Polymarket order ID to cancel
+        signer_address: Wallet address the CLOB credentials are registered for
+        credentials: CLOB API credentials
+    """
+
+    order_id: str
+    signer_address: str
+    credentials: PolymarketCredentials
+
+
+@dataclass
+class ClobCancelResult:
+    """CLOB cancellation result.
+
+    Attributes:
+        canceled: List of successfully canceled order IDs
+        not_canceled: Map of failed cancellations with reasons
+    """
+
+    canceled: List[str]
+    not_canceled: Dict[str, str]
+
+
+@dataclass
+class EscrowRefundInfo:
+    """Escrow refund details from a cancel.
+
+    Attributes:
+        escrow_order_id: Escrow order ID
+        previous_status: Previous escrow status
+        refund_triggered: Whether a refund was triggered
+        refund_tx_hash: Refund transaction hash (if refund was triggered)
+        refunded_amount: Refunded amount in USDC (if refund was triggered)
+    """
+
+    escrow_order_id: str
+    previous_status: str
+    refund_triggered: bool
+    refund_tx_hash: Optional[str] = None
+    refunded_amount: Optional[str] = None
+
+
+@dataclass
+class ServerCancelOrderResult:
+    """Successful cancel result.
+
+    Attributes:
+        success: Whether the cancellation was successful
+        order_id: Order ID that was canceled
+        clob_cancel_result: CLOB cancellation result
+        escrow: Escrow refund details (if escrow was used)
+        latency_ms: Server latency in milliseconds
+    """
+
+    success: bool
+    order_id: str
+    clob_cancel_result: ClobCancelResult
+    escrow: Optional[EscrowRefundInfo] = None
+    latency_ms: Optional[float] = None

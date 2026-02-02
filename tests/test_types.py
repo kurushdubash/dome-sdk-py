@@ -160,6 +160,7 @@ class TestOrderTypes:
         """Test Order creation."""
         order = Order(
             token_id="123",
+            token_label="Yes",
             side="BUY",
             market_slug="test-market",
             condition_id="0x456",
@@ -171,9 +172,12 @@ class TestOrderTypes:
             timestamp=1234567890,
             order_hash="0xabc",
             user="0xdef",
+            taker=None,
         )
         assert order.token_id == "123"
+        assert order.token_label == "Yes"
         assert order.side == "BUY"
+        assert order.taker is None
 
     def test_pagination(self) -> None:
         """Test Pagination creation."""
@@ -185,6 +189,7 @@ class TestOrderTypes:
         """Test OrdersResponse creation."""
         order = Order(
             token_id="123",
+            token_label="No",
             side="BUY",
             market_slug="test",
             condition_id="0x456",
@@ -196,6 +201,7 @@ class TestOrderTypes:
             timestamp=1234567890,
             order_hash="0xabc",
             user="0xdef",
+            taker="0x1234",
         )
         pagination = Pagination(limit=50, offset=0, total=100, has_more=True)
 

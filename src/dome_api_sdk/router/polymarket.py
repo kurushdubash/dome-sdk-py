@@ -61,14 +61,19 @@ import httpx
 
 from ..types import (
     AllowanceStatus,
+    CancelOrderParams,
+    ClobCancelResult,
+    EscrowRefundInfo,
     LinkPolymarketUserParams,
     PlaceOrderParams,
     PolymarketCredentials,
     PolymarketRouterConfig,
     SafeLinkResult,
+    ServerCancelOrderResult,
     SignedPolymarketOrder,
     WalletType,
 )
+from ..escrow.dome_types import ClaimWinningsResult
 from ..utils.allowances import (
     POLYGON_ADDRESSES,
     check_all_allowances,
@@ -784,6 +789,263 @@ class PolymarketRouter:
         return await check_all_allowances(
             wallet_address,
             rpc_url or self.rpc_url,
+        )
+
+    async def cancel_order(
+        self,
+        params: CancelOrderParams,
+    ) -> ServerCancelOrderResult:
+        """Cancel an order on Polymarket via Dome API.
+
+        Args:
+            params: Cancel order parameters containing order_id, signer_address,
+                and credentials
+
+        Returns:
+            ServerCancelOrderResult with cancellation status and optional escrow refund info
+
+        Raises:
+            ValueError: If API key is not set or required fields are missing
+            Exception: If the server returns an error
+        """
+        if not self.api_key:
+            raise ValueError(
+                "Dome API key required for cancel_order. "
+                "Pass api_key to router constructor."
+            )
+
+        # Validate required fields
+        order_id = params.get("order_id")
+        signer_address = params.get("signer_address")
+        credentials = params.get("credentials")
+
+        if not order_id:
+            raise ValueError("Missing required field: order_id")
+        if not signer_address:
+            raise ValueError("Missing required field: signer_address")
+        if not credentials:
+            raise ValueError("Missing required field: credentials")
+
+        # Build request body (camelCase for server)
+        request = {
+            "orderId": order_id,
+            "signerAddress": signer_address,
+            "credentials": {
+                "apiKey": credentials.api_key,
+                "apiSecret": credentials.api_secret,
+                "apiPassphrase": credentials.api_passphrase,
+            },
+        }
+
+        # POST to Dome API
+        response = await self._http_client.post(
+            f"{DOME_API_ENDPOINT}/polymarket/cancelOrder",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}",
+            },
+            json=request,
+        )
+
+        # Parse response
+        if not response.is_success:
+            error_body = ""
+            try:
+                error_body = response.text
+            except Exception:
+                pass
+            raise Exception(
+                f"Cancel request failed: {response.status_code} {response.reason_phrase}"
+                f"{f' - {error_body}' if error_body else ''}"
+            )
+
+        try:
+            server_response = response.json()
+        except Exception:
+            raise Exception(
+                f"Cancel request failed: {response.status_code} {response.text}"
+            )
+
+        # Check for server-level errors
+        if server_response.get("error") or server_response.get("message"):
+            error_msg = (
+                server_response.get("error") or server_response.get("message")
+            )
+            raise Exception(f"Order cancellation failed: {error_msg}")
+
+        if not server_response.get("success"):
+            raise Exception("Server returned unsuccessful cancellation")
+
+        # Parse CLOB cancel result
+        clob_raw = server_response.get("clobCancelResult", {})
+        clob_cancel_result = ClobCancelResult(
+            canceled=clob_raw.get("canceled", []),
+            not_canceled=clob_raw.get("not_canceled", {}),
+        )
+
+        # Parse optional escrow refund info
+        escrow = None
+        escrow_raw = server_response.get("escrow")
+        if escrow_raw:
+            escrow = EscrowRefundInfo(
+                escrow_order_id=escrow_raw["escrowOrderId"],
+                previous_status=escrow_raw["previousStatus"],
+                refund_triggered=escrow_raw["refundTriggered"],
+                refund_tx_hash=escrow_raw.get("refundTxHash"),
+                refunded_amount=escrow_raw.get("refundedAmount"),
+            )
+
+        return ServerCancelOrderResult(
+            success=server_response["success"],
+            order_id=server_response["orderId"],
+            clob_cancel_result=clob_cancel_result,
+            escrow=escrow,
+            latency_ms=server_response.get("latencyMs"),
+        )
+
+    async def claim_winnings(self, params: Dict[str, Any]) -> ClaimWinningsResult:
+        """Claim winnings from a resolved market via Dome API.
+
+        Two flows are supported based on wallet_type:
+        - EOA: pass wallet_type='eoa' and signed_redeem_tx (pre-signed hex)
+        - Privy: pass wallet_type='privy', privy_wallet_id, condition_id, outcome_index
+
+        Both flows require: position_id, wallet_type, payer_address, signer_address,
+        and performance_fee_auth (a dict with positionId, payer, expectedWinnings,
+        domeAmount, affiliateAmount, chainId, deadline, signature).
+
+        No CLOB credentials are needed (unlike order placement).
+
+        Args:
+            params: Claim winnings parameters dict with keys:
+                - position_id (str): Position identifier (bytes32 hex)
+                - wallet_type (str): 'eoa' or 'privy'
+                - payer_address (str): Address that holds the tokens
+                - signer_address (str): EOA that signed the perf fee auth
+                - performance_fee_auth (dict): Signed performance fee authorization
+                - signed_redeem_tx (str, optional): Pre-signed redeem tx (EOA only)
+                - privy_wallet_id (str, optional): Privy wallet ID (Privy only)
+                - condition_id (str, optional): Condition ID (Privy only)
+                - outcome_index (int, optional): Winning outcome index (Privy only)
+                - affiliate (str, optional): Affiliate address override
+
+        Returns:
+            ClaimWinningsResult with claim status and transaction hashes
+
+        Raises:
+            ValueError: If required fields are missing or wallet-type-specific
+                fields are not provided
+            Exception: If the server returns an error
+        """
+        if not self.api_key:
+            raise ValueError(
+                "Dome API key required for claim_winnings. "
+                "Pass api_key to router constructor."
+            )
+
+        # Validate required fields
+        required = ["position_id", "wallet_type", "payer_address",
+                     "signer_address", "performance_fee_auth"]
+        for field in required:
+            if field not in params or params[field] is None:
+                raise ValueError(f"Missing required field: {field}")
+
+        wallet_type = params["wallet_type"]
+        if wallet_type not in ("eoa", "privy"):
+            raise ValueError(
+                f"wallet_type must be 'eoa' or 'privy', got '{wallet_type}'"
+            )
+
+        # Validate wallet-type-specific fields
+        if wallet_type == "eoa":
+            if not params.get("signed_redeem_tx"):
+                raise ValueError(
+                    "signed_redeem_tx is required for wallet_type='eoa'"
+                )
+        elif wallet_type == "privy":
+            privy_required = ["privy_wallet_id", "condition_id", "outcome_index"]
+            for field in privy_required:
+                if field not in params or params[field] is None:
+                    raise ValueError(
+                        f"Missing required field for Privy wallet: {field}"
+                    )
+
+        # Build request body matching the server's ClaimWinningsRequest shape
+        # Server expects camelCase JSON keys
+        request: Dict[str, Any] = {
+            "positionId": params["position_id"],
+            "walletType": wallet_type,
+            "payerAddress": params["payer_address"],
+            "signerAddress": params["signer_address"],
+            "performanceFeeAuth": params["performance_fee_auth"],
+        }
+
+        # Add optional fields based on wallet type
+        if params.get("signed_redeem_tx") is not None:
+            request["signedRedeemTx"] = params["signed_redeem_tx"]
+        if params.get("privy_wallet_id") is not None:
+            request["privyWalletId"] = params["privy_wallet_id"]
+        if params.get("condition_id") is not None:
+            request["conditionId"] = params["condition_id"]
+        if params.get("outcome_index") is not None:
+            request["outcomeIndex"] = params["outcome_index"]
+        if params.get("affiliate") is not None:
+            request["affiliate"] = params["affiliate"]
+
+        # POST to Dome API
+        response = await self._http_client.post(
+            f"{DOME_API_ENDPOINT}/polymarket/claimWinnings",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}",
+            },
+            json=request,
+        )
+
+        # Parse response
+        try:
+            server_response = response.json()
+        except Exception:
+            raise Exception(
+                f"Claim winnings request failed: "
+                f"{response.status_code} {response.text}"
+            )
+
+        if not response.is_success:
+            error_body = ""
+            try:
+                error_body = response.text
+            except Exception:
+                pass
+            raise Exception(
+                f"Claim winnings request failed: "
+                f"{response.status_code} {response.reason_phrase}"
+                f"{f' - {error_body}' if error_body else ''}"
+            )
+
+        # Check for server-level errors
+        if server_response.get("error") or server_response.get("message"):
+            error_msg = (
+                server_response.get("error") or server_response.get("message")
+            )
+            raise Exception(f"Claim winnings failed: {error_msg}")
+
+        if not server_response.get("success"):
+            raise Exception("Server returned unsuccessful claim")
+
+        # Convert camelCase response to ClaimWinningsResult
+        return ClaimWinningsResult(
+            success=server_response["success"],
+            position_id=server_response["positionId"],
+            wallet_type=server_response["walletType"],
+            status=server_response.get("status", "completed"),
+            fee_pulled=server_response.get("feePulled"),
+            dome_amount=server_response.get("domeAmount"),
+            affiliate_amount=server_response.get("affiliateAmount"),
+            pull_fee_tx_hash=server_response.get("pullFeeTxHash"),
+            distribute_tx_hash=server_response.get("distributeTxHash"),
+            redeemed=server_response.get("redeemed"),
+            claim_tx_hash=server_response.get("claimTxHash"),
         )
 
 

@@ -26,7 +26,11 @@ class BaseClient:
             raise ValueError("DOME_API_KEY is required")
 
         self._api_key = config.get("api_key") or os.getenv("DOME_API_KEY", "")
-        self._base_url = config.get("base_url") or "https://api.domeapi.io/v1"
+        self._base_url = (
+            config.get("api_url")
+            or config.get("base_url")
+            or "https://api.domeapi.io/v1"
+        )
         self._timeout = config.get("timeout") or 30.0
 
     def _prepare_headers(

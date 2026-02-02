@@ -56,7 +56,67 @@ For Polymarket trading with external wallets (Privy, MetaMask, etc.):
 from .client import DomeClient
 
 # Router and utilities
-from .router import PolymarketRouter
+from .router import (
+    PolymarketRouter,
+    PolymarketRouterWithEscrow,
+    PolymarketRouterWithEscrowConfig,
+    PlaceOrderWithEscrowParams,
+    EscrowConfig,
+)
+
+# Escrow module (v1/MVP - DomeFeeEscrow)
+from .escrow import (
+    OrderParams,
+    FeeAuthorization,
+    SignedFeeAuthorization,
+    FEE_AUTHORIZATION_TYPES,
+    generate_order_id,
+    verify_order_id,
+    create_eip712_domain,
+    create_fee_authorization,
+    sign_fee_authorization,
+    sign_fee_authorization_with_signer,
+    verify_fee_authorization_signature,
+    USDC_POLYGON,
+    ESCROW_CONTRACT_POLYGON,
+    format_usdc,
+    parse_usdc,
+    format_bps,
+    calculate_fee,
+    calculate_order_size_usdc,
+)
+
+# Escrow module (v2 - DomeFeeEscrow)
+from .escrow import (
+    DomeFeeEscrowClient,
+    OrderFeeAuthorization,
+    SignedOrderFeeAuthorization,
+    PerformanceFeeAuthorization,
+    SignedPerformanceFeeAuthorization,
+    ORDER_FEE_AUTHORIZATION_TYPES,
+    PERFORMANCE_FEE_AUTHORIZATION_TYPES,
+    CalculatedFees,
+    EscrowStatus,
+    RemainingEscrow,
+    ClaimWinningsResult,
+    create_dome_eip712_domain,
+    create_order_fee_authorization,
+    create_performance_fee_authorization,
+    sign_order_fee_authorization,
+    sign_performance_fee_authorization,
+    sign_order_fee_authorization_with_signer,
+    sign_performance_fee_authorization_with_signer,
+    verify_order_fee_authorization_signature,
+    verify_performance_fee_authorization_signature,
+    MIN_ORDER_FEE,
+    MIN_PERF_FEE,
+    MAX_FEE_ABSOLUTE,
+    MAX_ORDER_FEE_BPS,
+    MAX_PERF_FEE_BPS,
+    CTF_CONTRACT_ADDRESS,
+    build_redeem_positions_calldata,
+    build_redeem_positions_tx,
+)
 from .types import (
     ActiveSubscription,
     Activity,
@@ -64,6 +124,8 @@ from .types import (
     ActivityResponse,
     AllowanceStatus,
     ApiError,
+    CancelOrderParams,
+    ClobCancelResult,
     CandlestickAskBid,
     CandlestickData,
     CandlestickPrice,
@@ -72,6 +134,7 @@ from .types import (
     CryptoPricesResponse,
     DomeSDKConfig,
     Eip712Payload,
+    EscrowRefundInfo,
     GetActivityParams,
     GetBinanceCryptoPricesParams,
     GetCandlesticksParams,
@@ -128,6 +191,7 @@ from .types import (
     PrivyRouterConfig,
     RequestConfig,
     SafeLinkResult,
+    ServerCancelOrderResult,
     ServerPlaceOrderError,
     ServerPlaceOrderResult,
     SignedPolymarketOrder,
@@ -159,7 +223,7 @@ from .utils import (
     set_privy_wallet_allowances,
 )
 
-__version__ = "0.1.5"
+__version__ = "1.0.0"
 __author__ = "Kurush Dubash, Kunal Roy"
 __email__ = "kurush@domeapi.com, kunal@domeapi.com"
 __license__ = "MIT"
@@ -273,8 +337,67 @@ __all__ = [
     "SignedPolymarketOrder",
     "ServerPlaceOrderResult",
     "ServerPlaceOrderError",
+    # Cancel Order
+    "CancelOrderParams",
+    "ClobCancelResult",
+    "EscrowRefundInfo",
+    "ServerCancelOrderResult",
     # Router
     "PolymarketRouter",
+    "PolymarketRouterWithEscrow",
+    "PolymarketRouterWithEscrowConfig",
+    "PlaceOrderWithEscrowParams",
+    "EscrowConfig",
+    # Escrow (v1/MVP - DomeFeeEscrow)
+    "OrderParams",
+    "FeeAuthorization",
+    "SignedFeeAuthorization",
+    "FEE_AUTHORIZATION_TYPES",
+    "generate_order_id",
+    "verify_order_id",
+    "create_eip712_domain",
+    "create_fee_authorization",
+    "sign_fee_authorization",
+    "sign_fee_authorization_with_signer",
+    "verify_fee_authorization_signature",
+    "USDC_POLYGON",
+    "ESCROW_CONTRACT_POLYGON",
+    "format_usdc",
+    "parse_usdc",
+    "format_bps",
+    "calculate_fee",
+    "calculate_order_size_usdc",
+    # Escrow (v2 - DomeFeeEscrow)
+    "DomeFeeEscrowClient",
+    "OrderFeeAuthorization",
+    "SignedOrderFeeAuthorization",
+    "PerformanceFeeAuthorization",
+    "SignedPerformanceFeeAuthorization",
+    "ORDER_FEE_AUTHORIZATION_TYPES",
+    "PERFORMANCE_FEE_AUTHORIZATION_TYPES",
+    "CalculatedFees",
+    "EscrowStatus",
+    "RemainingEscrow",
+    "create_dome_eip712_domain",
+    "create_order_fee_authorization",
+    "create_performance_fee_authorization",
+    "sign_order_fee_authorization",
+    "sign_performance_fee_authorization",
+    "sign_order_fee_authorization_with_signer",
+    "sign_performance_fee_authorization_with_signer",
+    "verify_order_fee_authorization_signature",
+    "verify_performance_fee_authorization_signature",
+    "MIN_ORDER_FEE",
+    "MIN_PERF_FEE",
+    "MAX_FEE_ABSOLUTE",
+    "MAX_ORDER_FEE_BPS",
+    "MAX_PERF_FEE_BPS",
+    # Claim Winnings
+    "ClaimWinningsResult",
+    # CTF utilities
+    "CTF_CONTRACT_ADDRESS",
+    "build_redeem_positions_calldata",
+    "build_redeem_positions_tx",
     # Utilities
     "PrivyClient",
     "RouterSigner",
