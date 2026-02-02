@@ -158,8 +158,8 @@ class TestWalletEndpoints:
                 "/polymarket/wallet/pnl/0x7c3db723f1d4d8cb9c550095203b686cb11e5c6b",
                 {
                     "granularity": "day",
-                    "start_time": "1726857600",
-                    "end_time": "1758316829",
+                    "start_time": 1726857600,
+                    "end_time": 1758316829,
                 },
                 None,
             )
@@ -217,8 +217,8 @@ class TestOrdersEndpoints:
                 "/polymarket/orders",
                 {
                     "market_slug": "bitcoin-up-or-down-july-25-8pm-et",
-                    "limit": "10",
-                    "offset": "0",
+                    "limit": 10,
+                    "offset": 0,
                 },
                 None,
             )
