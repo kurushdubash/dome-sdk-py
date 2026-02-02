@@ -212,17 +212,14 @@ class TestClaimWinningsResult:
 
 
 class TestClaimWinningsRouter:
-    """Tests for PolymarketRouterWithEscrow.claim_winnings() request validation."""
+    """Tests for PolymarketRouter.claim_winnings() request validation."""
 
     def _make_router(self):
         """Create a router with a mocked HTTP client."""
-        from src.dome_api_sdk.router.polymarket_escrow import (
-            PolymarketRouterWithEscrow,
-        )
+        from src.dome_api_sdk.router.polymarket import PolymarketRouter
 
-        router = PolymarketRouterWithEscrow({
+        router = PolymarketRouter({
             "api_key": "test-api-key",
-            "escrow": {"chain_id": 137},
         })
         return router
 
@@ -255,11 +252,9 @@ class TestClaimWinningsRouter:
     @pytest.mark.asyncio
     async def test_missing_api_key(self):
         """Should raise ValueError when api_key is not set."""
-        from src.dome_api_sdk.router.polymarket_escrow import (
-            PolymarketRouterWithEscrow,
-        )
+        from src.dome_api_sdk.router.polymarket import PolymarketRouter
 
-        router = PolymarketRouterWithEscrow({"escrow": {"chain_id": 137}})
+        router = PolymarketRouter({})
         params = self._make_valid_params()
 
         with pytest.raises(ValueError, match="Dome API key required"):
