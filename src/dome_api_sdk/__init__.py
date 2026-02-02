@@ -223,7 +223,7 @@ from .utils import (
     set_privy_wallet_allowances,
 )
 
-__version__ = "0.1.5"
+__version__ = "1.0.0"
 __author__ = "Kurush Dubash, Kunal Roy"
 __email__ = "kurush@domeapi.com, kunal@domeapi.com"
 __license__ = "MIT"
